@@ -1,0 +1,460 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}VoteX — College Voting System{% endblock %}
+{% block meta_description %}Cast your vote securely. View live election results and candidates for your college.{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Hero Section ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px var(--sp-xl) var(--sp-3xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-sm);
+  background: rgba(108, 99, 255, 0.15);
+  border: 1px solid rgba(108, 99, 255, 0.3);
+  border-radius: var(--radius-full);
+  padding: 0.4rem 1.2rem;
+  font-size: 0.85rem;
+  color: var(--primary-light);
+  margin-bottom: var(--sp-xl);
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.hero h1 {
+  max-width: 800px;
+  margin-bottom: var(--sp-lg);
+  animation: fadeInDown 0.7s ease-out 0.1s both;
+}
+
+.hero p {
+  font-size: 1.15rem;
+  max-width: 550px;
+  margin-bottom: var(--sp-2xl);
+  animation: fadeInDown 0.7s ease-out 0.2s both;
+}
+
+.hero-cta {
+  display: flex;
+  gap: var(--sp-md);
+  justify-content: center;
+  flex-wrap: wrap;
+  animation: fadeInUp 0.7s ease-out 0.3s both;
+}
+
+/* Floating particles */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: floatUp var(--dur, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+@keyframes floatUp {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+  50% { transform: translateY(-40px) rotate(180deg); opacity: 1; }
+}
+
+/* ── Section headings ── */
+.section-wrap {
+  padding: var(--sp-3xl) 0;
+}
+
+/* ── Election Cards ── */
+.election-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: var(--sp-xl); }
+
+.election-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: all var(--transition);
+  position: relative;
+}
+
+.election-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--grad-primary);
+}
+
+.election-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+  border-color: rgba(108, 99, 255, 0.3);
+}
+
+.election-card-body { padding: var(--sp-xl); }
+.election-card-footer {
+  padding: var(--sp-md) var(--sp-xl);
+  border-top: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ── Candidate Cards ── */
+.candidates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--sp-lg);
+}
+
+.candidate-showcase-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  text-align: center;
+  transition: all var(--transition);
+}
+
+.candidate-showcase-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-card);
+  border-color: rgba(255,107,157,0.3);
+}
+
+.candidate-img-wrap {
+  position: relative;
+  padding-top: 100%;
+  overflow: hidden;
+}
+
+.candidate-img-wrap img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.candidate-img-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(13,14,26,0.9));
+  height: 60%;
+}
+
+.candidate-card-info { padding: var(--sp-lg); }
+
+@keyframes fadeInDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── HERO ── -->
+<section class="hero">
+  <!-- Particles -->
+  <style>
+    .particle:nth-child(1)  { width:8px;  height:8px;  background:rgba(108,99,255,0.4);   top:20%; left:10%; --dur:5s;   --delay:0s;   }
+    .particle:nth-child(2)  { width:12px; height:12px; background:rgba(255,107,157,0.35); top:50%; left:25%; --dur:7s;   --delay:1s;   }
+    .particle:nth-child(3)  { width:6px;  height:6px;  background:rgba(0,217,163,0.3);    top:80%; left:70%; --dur:6s;   --delay:2s;   }
+    .particle:nth-child(4)  { width:16px; height:16px; background:rgba(108,99,255,0.4);   top:30%; left:85%; --dur:8s;   --delay:0.5s; }
+    .particle:nth-child(5)  { width:10px; height:10px; background:rgba(255,107,157,0.35); top:65%; left:50%; --dur:5.5s; --delay:1.5s; }
+    .particle:nth-child(6)  { width:5px;  height:5px;  background:rgba(0,217,163,0.3);    top:15%; left:40%; --dur:9s;   --delay:3s;   }
+    .particle:nth-child(7)  { width:14px; height:14px; background:rgba(108,99,255,0.4);   top:70%; left:90%; --dur:7.5s; --delay:2.5s; }
+    .particle:nth-child(8)  { width:9px;  height:9px;  background:rgba(255,107,157,0.35); top:45%; left:15%; --dur:6.5s; --delay:0.8s; }
+  </style>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+  <div class="particle"></div>
+
+  <div class="hero-badge">
+    <span>🗳️</span> Secure Digital Voting Platform
+  </div>
+
+  <h1>
+    Your Voice,<br>
+    Your <span class="text-gradient">Vote</span>
+  </h1>
+
+  <p>
+    Participate in transparent college elections. Cast your vote securely,
+    view candidates, and track live results — all in one place.
+  </p>
+
+  <div class="hero-cta">
+    {% if user.is_authenticated %}
+      {% if user.role == 'student' %}
+        <a href="{% url 'voting:student_dashboard' %}" class="btn btn-primary btn-lg">
+          🗳️ Go to Dashboard
+        </a>
+      {% else %}
+        <a href="{% url 'web_admin:dashboard' %}" class="btn btn-primary btn-lg">
+          ⚙️ Admin Dashboard
+        </a>
+      {% endif %}
+    {% else %}
+      <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg">
+        🔐 Login to Vote
+      </a>
+    {% endif %}
+    <a href="#elections" class="btn btn-outline btn-lg">
+      📋 View Elections
+    </a>
+  </div>
+
+  <!-- Scroll indicator -->
+  <div style="position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);animation:bounce 2s infinite;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)">
+      <path d="M12 5v14M5 12l7 7 7-7" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+</section>
+
+<!-- ── STATS BAR ── -->
+<section style="padding:var(--sp-2xl) 0;background:rgba(255,255,255,0.02);border-top:1px solid var(--glass-border);border-bottom:1px solid var(--glass-border);">
+  <div class="container">
+    <div class="grid grid-4" style="gap:var(--sp-md);">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-primary">⚡</div>
+        <div>
+          <div class="stat-value">{{ active_elections.count }}</div>
+          <div class="stat-label">Active Elections</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-warning">📅</div>
+        <div>
+          <div class="stat-value">{{ upcoming_elections.count }}</div>
+          <div class="stat-label">Upcoming</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-success">✅</div>
+        <div>
+          <div class="stat-value">{{ published_results|length }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-accent">🏆</div>
+        <div>
+          <div class="stat-value">100%</div>
+          <div class="stat-label">Secure</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── ACTIVE ELECTIONS ── -->
+<section class="section-wrap" id="elections">
+  <div class="container">
+    <h2 class="section-title">Active <span class="text-gradient">Elections</span></h2>
+
+    {% if active_elections %}
+    <div class="election-grid">
+      {% for election in active_elections %}
+      <div class="election-card">
+        <div class="election-card-body">
+          <div class="flex-between mb-md">
+            {% if election.is_published %}
+              <span class="badge" style="background:rgba(255,215,0,0.15);color:gold;border:1px solid rgba(255,215,0,0.3);">🔒 Results Published</span>
+            {% else %}
+              <span class="badge badge-active">● Live</span>
+            {% endif %}
+            <span style="font-size:0.78rem;color:var(--text-muted);">
+              Ends {{ election.end_time|date:"d M Y" }}
+            </span>
+          </div>
+
+          <h3 style="margin-bottom:var(--sp-sm);font-size:1.2rem;">{{ election.name }}</h3>
+          <p style="font-size:0.9rem;margin-bottom:var(--sp-lg);">
+            {{ election.description|truncatewords:20 }}
+          </p>
+
+          {% if election.is_published %}
+          {# Results published — show date range instead of running timer #}
+          <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;color:var(--text-muted);margin-bottom:var(--sp-lg);padding:0.75rem 1rem;background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.15);border-radius:var(--radius-md);">
+            <span>📅</span> Election period closed — results are published
+          </div>
+          {% else %}
+          <!-- Countdown Timer — only shown when results not published -->
+          <div class="countdown mb-md" data-end="{{ election.end_time|date:'c' }}">
+            <div class="countdown-unit"><div class="countdown-number" data-days>--</div><div class="countdown-label">Days</div></div>
+            <div class="countdown-unit"><div class="countdown-number" data-hours>--</div><div class="countdown-label">Hours</div></div>
+            <div class="countdown-unit"><div class="countdown-number" data-mins>--</div><div class="countdown-label">Mins</div></div>
+            <div class="countdown-unit"><div class="countdown-number" data-secs>--</div><div class="countdown-label">Secs</div></div>
+          </div>
+          {% endif %}
+
+          <div style="font-size:0.83rem;color:var(--text-muted);">
+            📋 {{ election.positions.count }} positions &nbsp;|&nbsp;
+            🗳️ {{ election.total_votes }} votes cast
+          </div>
+        </div>
+        <div class="election-card-footer">
+          {% if election.is_published %}
+            <a href="{% url 'voting:election_results' election.id %}" class="btn btn-outline" style="width:100%;">
+              📊 View Results
+            </a>
+          {% elif user.is_authenticated and user.role == 'student' %}
+            <a href="{% url 'voting:election_detail' election.id %}" class="btn btn-primary" style="width:100%;">
+              🗳️ Vote Now
+            </a>
+          {% else %}
+            <a href="{% url 'accounts:login' %}" class="btn btn-outline" style="width:100%;">
+              Login to Vote
+            </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card text-center" style="padding:3rem;">
+      <div style="font-size:3rem;margin-bottom:var(--sp-md);">🗳️</div>
+      <h3>No Active Elections</h3>
+      <p>Check back later for upcoming elections.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ── CANDIDATES SHOWCASE ── -->
+{% for election in active_elections %}
+{% if election.positions.all %}
+<section class="section-wrap" id="candidates" style="padding-top:0;">
+  <div class="container">
+    <h2 class="section-title">Meet the <span class="text-gradient">Candidates</span>
+      <span style="font-size:1rem;color:var(--text-muted);font-weight:400;"> — {{ election.name }}</span>
+    </h2>
+
+    {% for position in election.positions.all %}
+    {% if position.candidates.all %}
+    <h4 style="color:var(--text-muted);font-size:0.85rem;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:var(--sp-lg);">
+      {{ position.title }}
+    </h4>
+    <div class="candidates-grid mb-xl">
+      {% for candidate in position.candidates.all %}
+      <div class="candidate-showcase-card">
+        <div class="candidate-img-wrap">
+          <img src="{{ candidate.photo_url }}" alt="{{ candidate.name }}" loading="lazy">
+          <div class="candidate-img-overlay"></div>
+        </div>
+        <div class="candidate-card-info">
+          <h4 style="color:var(--text-primary);margin-bottom:4px;">{{ candidate.name }}</h4>
+          <p style="font-size:0.82rem;color:var(--primary-light);">{{ position.title }}</p>
+          {% if candidate.bio %}
+          <p style="font-size:0.82rem;margin-top:var(--sp-sm);">{{ candidate.bio|truncatewords:15 }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% empty %}
+{% endfor %}
+
+<!-- ── WINNERS SHOWCASE ── -->
+{% if published_results %}
+<section class="section-wrap" id="winners" style="background:rgba(255,255,255,0.015);border-top:1px solid var(--glass-border);">
+  <div class="container">
+    <h2 class="section-title">🏆 Election <span class="text-gradient">Winners</span></h2>
+    <p style="color:var(--text-muted);margin-top:-1rem;margin-bottom:2.5rem;">
+      Official results for completed elections.
+    </p>
+
+    {% for item in published_results %}
+    <div style="margin-bottom:3rem;">
+      <!-- Election header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+        <div>
+          <span class="badge" style="background:rgba(255,215,0,0.15);color:gold;border:1px solid rgba(255,215,0,0.3);margin-bottom:0.5rem;">📊 Results Published</span>
+          <h3 style="font-size:1.25rem;">{{ item.election.name }}</h3>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:0.25rem;">
+            {{ item.election.start_time|date:"d M Y" }} — {{ item.election.end_time|date:"d M Y" }}
+            &nbsp;·&nbsp; {{ item.election.total_votes }} vote{{ item.election.total_votes|pluralize }} cast
+          </p>
+        </div>
+        <a href="{% url 'voting:election_results' item.election.id %}" class="btn btn-outline btn-sm">
+          📋 Full Results →
+        </a>
+      </div>
+
+      {% if item.winners %}
+      <!-- Winners grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.25rem;">
+        {% for w in item.winners %}
+        <div style="background:var(--bg-card);border:1px solid rgba(255,215,0,0.25);border-radius:var(--radius-xl);overflow:hidden;position:relative;text-align:center;transition:all var(--transition);">
+          <!-- Gold top bar -->
+          <div style="height:4px;background:linear-gradient(90deg,gold,orange,gold);"></div>
+
+          <!-- Crown badge -->
+          <div style="position:absolute;top:12px;right:12px;background:rgba(255,215,0,0.2);border:1px solid rgba(255,215,0,0.4);border-radius:var(--radius-full);padding:0.2rem 0.6rem;font-size:0.72rem;font-weight:700;color:gold;">
+            👑 Winner
+          </div>
+
+          <!-- Photo -->
+          <div style="position:relative;padding-top:75%;overflow:hidden;">
+            <img src="{{ w.winner.photo_url }}" alt="{{ w.winner.name }}"
+              style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(13,14,26,0.95));"></div>
+          </div>
+
+          <!-- Info -->
+          <div style="padding:1rem;">
+            <div style="font-size:0.72rem;color:gold;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.35rem;font-weight:700;">
+              {{ w.position }}
+            </div>
+            <div style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:0.35rem;">
+              {{ w.winner.name }}
+            </div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">
+              {{ w.winner.vote_count }} vote{{ w.winner.vote_count|pluralize }}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="padding:2rem;text-align:center;color:var(--text-muted);background:var(--bg-card);border:1px solid var(--glass-border);border-radius:var(--radius-xl);">
+        No votes were cast in this election.
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/countdown.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'web_admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Live Results — {{ election.name }}{% endblock %}
+{% block admin_title_display %}📊 Live Results — {{ election.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'web_admin:elections_list' %}">Elections</a> → <a href="{% url 'web_admin:election_detail' election.id %}">{{ election.name }}</a> → Results{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+.donut-wrap {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  margin: 0 auto 1.5rem;
+}
+.donut-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.position-result-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+</style>
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- Header -->
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem;align-items:center;">
+  <div>
+    <span class="badge {% if election.status == 'active' %}badge-active{% elif election.status == 'scheduled' %}badge-scheduled{% else %}badge-ended{% endif %}">
+      {{ election.status|title }}
+    </span>
+    <p style="font-size:0.83rem;color:var(--text-muted);margin-top:0.4rem;">
+      Total votes: <strong style="color:var(--text-secondary);">{{ election.total_votes }}</strong>
+      &nbsp;|&nbsp; Auto-refreshes every 15 seconds
+    </p>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:0.75rem;">
+    <form method="POST" action="{% url 'web_admin:election_publish' election.id %}">
+      {% csrf_token %}
+      <button type="submit" class="btn {% if election.is_published %}btn-danger{% else %}btn-success{% endif %}">
+        {% if election.is_published %}🔒 Unpublish{% else %}📢 Publish Results{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- Results by Position -->
+{% for item in positions_data %}
+<div class="position-result-card">
+  <div style="display:grid;grid-template-columns:1fr 220px;gap:2rem;align-items:start;">
+
+    <!-- Bar Results -->
+    <div>
+      <h3 style="margin-bottom:1.25rem;font-size:1.1rem;">{{ item.position.title }}</h3>
+      <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem;">Total: {{ item.total }} vote{{ item.total|pluralize }}</p>
+
+      {% for cd in item.candidates %}
+      <div style="margin-bottom:1.25rem;">
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+          <img src="{{ cd.photo_url }}" alt="{{ cd.name }}"
+            style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+              <span style="font-weight:600;color:var(--text-primary);">
+                {{ cd.name }}
+                {% if forloop.first and item.total > 0 %}
+                <span style="font-size:0.75rem;color:gold;margin-left:0.4rem;">👑 Leader</span>
+                {% endif %}
+              </span>
+              <span style="font-size:0.85rem;color:var(--text-muted);">
+                {{ cd.votes }} ({{ cd.percentage }}%)
+              </span>
+            </div>
+            <div class="progress">
+              <div class="progress-bar" style="width:{{ cd.percentage }}%;{% if forloop.first %}background:var(--grad-primary);{% endif %}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Donut Chart per position -->
+    <div>
+      <div class="donut-wrap">
+        <canvas id="donut-{{ item.position.id }}" width="200" height="200"></canvas>
+        <div class="donut-label">
+          <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary);">{{ item.total }}</div>
+          <div style="font-size:0.72rem;color:var(--text-muted);">votes</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ctx = document.getElementById('donut-{{ item.position.id }}').getContext('2d');
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: [{% for cd in item.candidates %}'{{ cd.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+      datasets: [{
+        data: [{% for cd in item.candidates %}{{ cd.votes }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#6C63FF','#FF6B9D','#00D9A3','#FFB347','#4ECDC4','#FF5E7A'],
+        borderWidth: 2,
+        borderColor: '#13142A',
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+})();
+</script>
+{% endfor %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-refresh results every 15 seconds
+setTimeout(() => location.reload(), 15000);
+</script>
+{% endblock %}

@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ election.name }} — Vote{% endblock %}
+
+{% block extra_css %}
+<style>
+.vote-wrap { padding-top: 100px; padding-bottom: 4rem; }
+
+.election-header-card {
+  background: var(--grad-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 2rem 2.5rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.election-header-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--grad-primary);
+}
+
+.position-section {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  margin-bottom: 2rem;
+  overflow: hidden;
+}
+
+.position-header {
+  padding: 1.5rem 2rem;
+  background: rgba(108,99,255,0.08);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.position-body { padding: 1.5rem 2rem; }
+
+.candidates-vote-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.25rem;
+}
+
+.vote-candidate-card img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.verified-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(0,217,163,0.15);
+  border: 1px solid rgba(0,217,163,0.3);
+  border-radius: var(--radius-full);
+  padding: 0.3rem 0.8rem;
+  color: var(--success);
+  font-size:0.75rem;
+  font-weight: 700;
+}
+
+.already-voted-overlay {
+  background: rgba(0,217,163,0.08);
+  border: 1px solid rgba(0,217,163,0.25);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--success);
+}
+
+.submit-bar {
+  position: sticky;
+  bottom: 2rem;
+  background: rgba(13,14,26,0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-card);
+  margin-top: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="vote-wrap">
+  <div class="container">
+
+    <!-- Election Header -->
+    <div class="election-header-card">
+      <div class="flex-between" style="flex-wrap:wrap;gap:1rem;">
+        <div>
+          <a href="{% url 'voting:student_dashboard' %}" style="font-size:0.85rem;color:var(--text-muted);">
+            ← Back to Dashboard
+          </a>
+          <h1 style="font-size:1.8rem;margin-top:0.5rem;">{{ election.name }}</h1>
+          {% if election.description %}
+          <p style="margin-top:0.5rem;">{{ election.description }}</p>
+          {% endif %}
+        </div>
+        <div>
+          {% if can_vote %}
+            <span class="badge badge-active" style="margin-bottom:0.5rem;">● Live</span>
+            <div class="countdown" data-end="{{ election.end_time|date:'c' }}" style="margin-top:0.5rem;">
+              <div class="countdown-unit" style="min-width:52px;padding:0.5rem;"><div class="countdown-number" data-days style="font-size:1.25rem;">--</div><div class="countdown-label">D</div></div>
+              <div class="countdown-unit" style="min-width:52px;padding:0.5rem;"><div class="countdown-number" data-hours style="font-size:1.25rem;">--</div><div class="countdown-label">H</div></div>
+              <div class="countdown-unit" style="min-width:52px;padding:0.5rem;"><div class="countdown-number" data-mins style="font-size:1.25rem;">--</div><div class="countdown-label">M</div></div>
+              <div class="countdown-unit" style="min-width:52px;padding:0.5rem;"><div class="countdown-number" data-secs style="font-size:1.25rem;">--</div><div class="countdown-label">S</div></div>
+            </div>
+          {% else %}
+            <span class="badge badge-ended">Election {{ election.status|title }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Vote Form -->
+    {% if can_vote %}
+    <form method="POST" action="{% url 'voting:cast_vote' election.id %}" id="voteForm">
+      {% csrf_token %}
+      <div id="selectionInfo" style="background:rgba(108,99,255,0.1);border:1px solid rgba(108,99,255,0.2);border-radius:var(--radius-md);padding:1rem 1.5rem;margin-bottom:2rem;font-size:0.9rem;color:var(--primary-light);">
+        ℹ️ Select <strong>one candidate per position</strong>. Click a card to select your choice.
+      </div>
+    {% endif %}
+
+    {% for item in positions_data %}
+    <div class="position-section">
+      <div class="position-header">
+        <div>
+          <h3 style="font-size:1.1rem;margin-bottom:0.2rem;">{{ item.position.title }}</h3>
+          {% if item.position.description %}
+          <p style="font-size:0.83rem;color:var(--text-muted);">{{ item.position.description }}</p>
+          {% endif %}
+        </div>
+        {% if item.already_voted %}
+        <span class="verified-check">✅ Voted</span>
+        {% endif %}
+      </div>
+
+      <div class="position-body">
+        {% if item.already_voted %}
+        <div class="already-voted-overlay">
+          ✅ You have already cast your vote for this position.
+        </div>
+        {% elif can_vote %}
+        <div class="candidates-vote-grid">
+          {% for candidate in item.candidates %}
+          <label class="vote-candidate-card" id="card-{{ item.position.id }}-{{ candidate.id }}"
+            onclick="selectCandidate({{ item.position.id }}, {{ candidate.id }}, this)">
+            <input type="radio"
+              name="position_{{ item.position.id }}"
+              value="candidate_{{ candidate.id }}"
+              id="vote-{{ item.position.id }}-{{ candidate.id }}">
+
+            <div class="selected-checkmark">✓</div>
+
+            <img src="{{ candidate.photo_url }}" alt="{{ candidate.name }}">
+
+            <h4 style="font-size:0.95rem;color:var(--text-primary);margin-bottom:0.25rem;">
+              {{ candidate.name }}
+            </h4>
+            {% if candidate.bio %}
+            <p style="font-size:0.78rem;color:var(--text-secondary);">
+              {{ candidate.bio|truncatewords:12 }}
+            </p>
+            {% endif %}
+          </label>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--text-muted);font-size:0.9rem;">
+          Voting is not currently available for this election.
+        </p>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if can_vote %}
+    <!-- Submit Bar -->
+    <div class="submit-bar">
+      <div>
+        <div id="selectionCount" style="font-size:0.9rem;color:var(--text-secondary);">
+          0 of {{ positions_data|length }} positions selected
+        </div>
+        <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">
+          Your vote is permanent and cannot be changed.
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" id="submitVoteBtn" disabled>
+        🗳️ Submit My Votes
+      </button>
+    </div>
+    </form>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/countdown.js' %}"></script>
+<script>
+const totalPositions = {{ positions_data|length }};
+let selected = {};
+
+function selectCandidate(positionId, candidateId, card) {
+  // Deselect all cards in this position
+  document.querySelectorAll(`[id^="card-${positionId}-"]`).forEach(c => {
+    c.classList.remove('selected');
+  });
+
+  // Select clicked card
+  card.classList.add('selected');
+  selected[positionId] = candidateId;
+
+  // Update radio
+  document.getElementById(`vote-${positionId}-${candidateId}`).checked = true;
+
+  // Update counter
+  const count = Object.keys(selected).length;
+  document.getElementById('selectionCount').textContent =
+    `${count} of ${totalPositions} positions selected`;
+
+  // Enable submit when all positions selected
+  const submitBtn = document.getElementById('submitVoteBtn');
+  if (count === totalPositions) {
+    submitBtn.disabled = false;
+    submitBtn.style.animation = 'pulse 1.5s ease-in-out infinite';
+  }
+}
+
+// Confirm before submit
+document.getElementById('voteForm')?.addEventListener('submit', function(e) {
+  const count = Object.keys(selected).length;
+  if (count < totalPositions) {
+    e.preventDefault();
+    alert(`Please select a candidate for all ${totalPositions} positions.`);
+    return;
+  }
+  if (!confirm('Are you sure you want to submit your votes? This cannot be undone.')) {
+    e.preventDefault();
+    return;
+  }
+  const btn = document.getElementById('submitVoteBtn');
+  btn.textContent = '⏳ Submitting...';
+  btn.disabled = true;
+});
+
+// Pulse animation for enabled button
+const style = document.createElement('style');
+style.textContent = '@keyframes pulse { 0%,100% { box-shadow: var(--shadow-btn); } 50% { box-shadow: 0 0 40px rgba(108,99,255,0.8); } }';
+document.head.appendChild(style);
+</script>
+{% endblock %}

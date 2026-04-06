@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block admin_title %}Admin{% endblock %} — VoteX Admin</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚙️</text></svg>">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Flash Messages -->
+{% if messages %}
+<div class="messages-container">
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }}" onclick="this.remove()">
+    {% if message.tags == 'success' %}✅{% elif message.tags == 'error' %}❌{% elif message.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-title">⚙️ VoteX Admin</div>
+      <div class="sidebar-subtitle">Admin Dashboard</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="{% url 'web_admin:dashboard' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="{% url 'web_admin:elections_list' %}" class="sidebar-nav-item {% if 'election' in request.resolver_match.url_name %}active{% endif %}">
+        <span class="icon">🗳️</span> Elections
+      </a>
+      <a href="{% url 'web_admin:election_create' %}" class="sidebar-nav-item">
+        <span class="icon">➕</span> New Election
+      </a>
+      <a href="{% url 'web_admin:students_list' %}" class="sidebar-nav-item {% if request.resolver_match.url_name == 'students_list' %}active{% endif %}">
+        <span class="icon">👥</span> Students
+      </a>
+
+      <div style="margin:1rem var(--sp-md);border-top:1px solid var(--glass-border);"></div>
+
+      <a href="{% url 'admin:index' %}" class="sidebar-nav-item" target="_blank">
+        <span class="icon">🔧</span> Django Admin ↗
+      </a>
+      <a href="{% url 'api:elections_list' %}" class="sidebar-nav-item" target="_blank">
+        <span class="icon">🌐</span> REST API ↗
+      </a>
+    </nav>
+
+    <div style="padding:1rem var(--sp-xl);border-top:1px solid var(--glass-border);">
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">
+        Logged in as:
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:600;">
+        {{ request.user.get_full_name|default:request.user.username }}
+      </div>
+      <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-sm" style="width:100%;margin-top:0.75rem;">
+        Logout
+      </a>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="admin-content">
+    <div style="margin-bottom:2rem;">
+      <h2 style="font-size:1.4rem;">{% block admin_title_display %}Dashboard{% endblock %}</h2>
+      <p style="color:var(--text-muted);font-size:0.85rem;">
+        {% block breadcrumb %}VoteX Admin{% endblock %}
+      </p>
+    </div>
+
+    {% block admin_content %}{% endblock %}
+  </div>
+</div>
+
+<script src="{% static 'js/main.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

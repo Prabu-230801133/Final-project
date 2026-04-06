@@ -1,0 +1,167 @@
+{% extends 'web_admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}{{ election.name }}{% endblock %}
+{% block admin_title_display %}{{ election.name }}{% endblock %}
+{% block breadcrumb %}<a href="{% url 'web_admin:elections_list' %}">Elections</a> → {{ election.name }}{% endblock %}
+
+{% block admin_content %}
+
+<!-- Header Actions -->
+<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem;">
+  <a href="{% url 'web_admin:live_results' election.id %}" class="btn btn-success">
+    📊 Live Results
+  </a>
+  <form method="POST" action="{% url 'web_admin:election_publish' election.id %}" style="display:inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline">
+      {% if election.is_published %}🔒 Unpublish Results{% else %}📢 Publish Results{% endif %}
+    </button>
+  </form>
+  <form method="POST" action="{% url 'web_admin:election_delete' election.id %}"
+    onsubmit="return confirm('Delete this entire election?')">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">🗑️ Delete Election</button>
+  </form>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+
+  <!-- LEFT: Positions & Candidates -->
+  <div>
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:1.25rem;">📋 Positions</h3>
+
+      <!-- Add Position Form -->
+      <form method="POST" action="{% url 'web_admin:position_add' election.id %}" style="margin-bottom:1.5rem;">
+        {% csrf_token %}
+        <div style="display:flex;gap:0.75rem;">
+          <input type="text" name="title" class="form-control" placeholder="Position title (e.g. President)" required style="flex:1;">
+          <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </div>
+      </form>
+
+      <!-- Positions List -->
+      {% if positions %}
+      {% for position in positions %}
+      <div style="background:rgba(255,255,255,0.03);border:1px solid var(--glass-border);border-radius:var(--radius-md);margin-bottom:1rem;overflow:hidden;">
+
+        <!-- Position Header -->
+        <div style="padding:1rem 1.25rem;border-bottom:1px solid var(--glass-border);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <strong style="color:var(--text-primary);">{{ position.title }}</strong>
+            <span style="font-size:0.78rem;color:var(--text-muted);margin-left:0.5rem;">
+              {{ position.candidates.count }} candidate(s)
+            </span>
+          </div>
+          <form method="POST" action="{% url 'web_admin:position_delete' position.id %}"
+            onsubmit="return confirm('Remove this position and all its candidates?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+          </form>
+        </div>
+
+        <!-- Candidates under this position -->
+        {% for candidate in position.candidates.all %}
+        <div style="padding:0.75rem 1.25rem;display:flex;align-items:center;gap:0.75rem;border-bottom:1px solid rgba(255,255,255,0.04);">
+          <img src="{{ candidate.photo_url }}" alt="{{ candidate.name }}"
+            style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+          <div style="flex:1;">
+            <div style="font-size:0.9rem;color:var(--text-primary);">{{ candidate.name }}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">{{ candidate.vote_count }} votes</div>
+          </div>
+          <form method="POST" action="{% url 'web_admin:candidate_delete' candidate.id %}"
+            onsubmit="return confirm('Remove this candidate?')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+
+        <!-- Add Candidate Form -->
+        <div style="padding:1rem 1.25rem;background:rgba(255,255,255,0.02);">
+          <details>
+            <summary style="font-size:0.82rem;color:var(--primary-light);cursor:pointer;padding:0.25rem 0;">
+              ➕ Add Candidate to {{ position.title }}
+            </summary>
+            <form method="POST" action="{% url 'web_admin:candidate_add' position.id %}"
+              enctype="multipart/form-data" style="margin-top:0.75rem;">
+              {% csrf_token %}
+              <div style="display:grid;gap:0.5rem;">
+                <input type="text" name="name" class="form-control" placeholder="Candidate name" required>
+                <textarea name="bio" class="form-control" placeholder="Short bio" rows="2"></textarea>
+                <input type="file" name="photo" class="form-control" accept="image/*">
+                <button type="submit" class="btn btn-primary btn-sm">Add Candidate</button>
+              </div>
+            </form>
+          </details>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:var(--text-muted);font-size:0.9rem;">No positions yet. Add one above.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT: Voter Assignment -->
+  <div>
+    <div class="card">
+      <h3 style="margin-bottom:1.25rem;">👥 Assigned Voters ({{ assigned_users.count }})</h3>
+
+      <!-- Assign Student Form -->
+      <form method="POST" action="{% url 'web_admin:assign_voter' election.id %}" style="margin-bottom:1.5rem;">
+        {% csrf_token %}
+        <div style="display:flex;gap:0.75rem;">
+          <select name="user_id" class="form-control" required style="flex:1;">
+            <option value="">Select student to assign…</option>
+            {% for student in all_students %}
+            <option value="{{ student.id }}">
+              {{ student.get_full_name|default:student.username }}
+              {% if student.student_id %}({{ student.student_id }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary btn-sm">Assign</button>
+        </div>
+      </form>
+
+      <!-- Assigned Students List -->
+      {% if assigned_users %}
+      <div class="table-wrapper" style="max-height:400px;overflow-y:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Email</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mapping in assigned_users %}
+            <tr>
+              <td style="color:var(--text-primary);">
+                {{ mapping.user.get_full_name|default:mapping.user.username }}
+                {% if mapping.user.student_id %}
+                <div style="font-size:0.72rem;color:var(--text-muted);">{{ mapping.user.student_id }}</div>
+                {% endif %}
+              </td>
+              <td>{{ mapping.user.email }}</td>
+              <td>
+                <a href="{% url 'web_admin:remove_voter' election.id mapping.user.id %}"
+                  onclick="return confirm('Remove this voter?')"
+                  class="btn btn-danger btn-sm">✕</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p style="color:var(--text-muted);font-size:0.9rem;">No voters assigned yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}

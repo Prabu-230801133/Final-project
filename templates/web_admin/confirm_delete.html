@@ -1,0 +1,23 @@
+{% extends 'web_admin/base_admin.html' %}
+
+{% block admin_title %}Confirm Delete{% endblock %}
+
+{% block admin_content %}
+<div style="max-width:480px;">
+  <div class="card" style="padding:2rem;text-align:center;">
+    <div style="font-size:3.5rem;margin-bottom:1.25rem;">⚠️</div>
+    <h2 style="margin-bottom:0.75rem;color:var(--danger);">Delete {{ type }}?</h2>
+    <p style="margin-bottom:2rem;">
+      You are about to permanently delete <strong style="color:var(--text-primary);">{{ object }}</strong>.
+      This action cannot be undone.
+    </p>
+    <form method="POST">
+      {% csrf_token %}
+      <div style="display:flex;gap:1rem;justify-content:center;">
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="javascript:history.back()" class="btn btn-outline">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

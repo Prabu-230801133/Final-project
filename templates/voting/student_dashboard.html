@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard — VoteX{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-wrap {
+  padding-top: 100px;
+  padding-bottom: 4rem;
+}
+
+.welcome-bar {
+  background: var(--grad-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  padding: 2rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.welcome-bar::before {
+  content: '🗳️';
+  position: absolute;
+  right: 2rem;
+  font-size: 5rem;
+  opacity: 0.08;
+}
+
+.election-status-card {
+  background: var(--bg-card);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: all var(--transition);
+  margin-bottom: var(--sp-xl);
+}
+
+.election-status-card:hover {
+  border-color: rgba(108,99,255,0.3);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+.election-status-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.election-status-body {
+  padding: 1.5rem 2rem;
+}
+
+.vote-progress {
+  margin: 1rem 0;
+}
+
+.vote-steps {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vote-step {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.08);
+  transition: background 0.5s;
+}
+
+.vote-step.done { background: var(--success); }
+.vote-step.active { background: var(--primary); }
+
+.voted-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 217, 163, 0.15);
+  border: 1px solid rgba(0, 217, 163, 0.3);
+  border-radius: var(--radius-full);
+  padding: 0.4rem 1.2rem;
+  color: var(--success);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.no-elections {
+  padding: 4rem;
+  text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+  <div class="container">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-bar">
+      <div>
+        <h2>Welcome, <span class="text-gradient">{{ request.user.get_full_name|default:request.user.username }}</span> 👋</h2>
+        <p style="margin-top:0.4rem;">
+          {% if request.user.student_id %}
+            Student ID: <strong>{{ request.user.student_id }}</strong> &nbsp;|&nbsp;
+          {% endif %}
+          {% if request.user.department %}
+            {{ request.user.department }}
+          {% endif %}
+        </p>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div class="stat-value" style="font-size:1.5rem;">{{ elections_data|length }}</div>
+        <div class="stat-label">Assigned Elections</div>
+      </div>
+    </div>
+
+    <h3 class="section-title">Your <span class="text-gradient">Elections</span></h3>
+
+    {% if elections_data %}
+      {% for item in elections_data %}
+      <div class="election-status-card">
+        <div class="election-status-header">
+          <div>
+            <h3 style="font-size:1.2rem;margin-bottom:0.25rem;">{{ item.election.name }}</h3>
+            <p style="font-size:0.85rem;color:var(--text-muted);">
+              {{ item.election.start_time|date:"d M Y, h:i A" }} →
+              {{ item.election.end_time|date:"d M Y, h:i A" }}
+            </p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;">
+            {% if item.is_results_locked %}
+              <span class="badge" style="background:rgba(255,107,157,0.15);color:var(--accent);border:1px solid rgba(255,107,157,0.3);">🔒 Results Published</span>
+            {% elif item.status == 'active' %}
+              <span class="badge badge-active">● Live</span>
+            {% elif item.status == 'scheduled' %}
+              <span class="badge badge-scheduled">📅 Scheduled</span>
+            {% else %}
+              <span class="badge badge-ended">⏹ Ended</span>
+            {% endif %}
+
+            {% if item.fully_voted %}
+              <span class="voted-badge">✅ Voted</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="election-status-body">
+          {% if item.election.description %}
+          <p style="font-size:0.9rem;margin-bottom:1rem;">{{ item.election.description }}</p>
+          {% endif %}
+
+          <!-- Voting progress visualization -->
+          {% if item.total_positions > 0 %}
+          <div class="vote-progress">
+            <div class="flex-between mb-sm">
+              <span style="font-size:0.82rem;color:var(--text-muted);">
+                Votes cast: {{ item.votes_cast }} / {{ item.total_positions }} positions
+              </span>
+              <span style="font-size:0.82rem;color:var(--text-muted);">
+                {{ item.votes_cast|floatformat:0 }}/{{ item.total_positions }}
+              </span>
+            </div>
+            <div class="vote-steps">
+              {% for i in item.election.positions.all %}
+              <div class="vote-step {% if forloop.counter <= item.votes_cast %}done{% elif forloop.counter == item.votes_cast|add:1 %}active{% endif %}"></div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Countdown for active/scheduled — hidden when results published -->
+          {% if item.status != 'ended' and not item.is_results_locked %}
+          <div style="margin-top:1rem;">
+            {% if item.status == 'active' %}
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Time remaining:</p>
+            <div class="countdown" data-end="{{ item.election.end_time|date:'c' }}" style="justify-content:flex-start;">
+              <div class="countdown-unit"><div class="countdown-number" data-days>--</div><div class="countdown-label">Days</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-hours>--</div><div class="countdown-label">Hours</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-mins>--</div><div class="countdown-label">Mins</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-secs>--</div><div class="countdown-label">Secs</div></div>
+            </div>
+            {% else %}
+            <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.75rem;">Starts in:</p>
+            <div class="countdown" data-end="{{ item.election.start_time|date:'c' }}" style="justify-content:flex-start;">
+              <div class="countdown-unit"><div class="countdown-number" data-days>--</div><div class="countdown-label">Days</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-hours>--</div><div class="countdown-label">Hours</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-mins>--</div><div class="countdown-label">Mins</div></div>
+              <div class="countdown-unit"><div class="countdown-number" data-secs>--</div><div class="countdown-label">Secs</div></div>
+            </div>
+            {% endif %}
+          </div>
+          {% elif item.is_results_locked %}
+          {# Results published — show a clean closed notice instead of a timer #}
+          <div style="margin-top:1rem;display:flex;align-items:center;gap:0.6rem;color:var(--text-muted);font-size:0.85rem;">
+            <span>📅</span>
+            Election ran {{ item.election.start_time|date:"d M Y" }} — {{ item.election.end_time|date:"d M Y" }}
+          </div>
+          {% endif %}
+
+
+          <!-- Action Buttons -->
+          <div style="margin-top:1.5rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
+
+            {% if item.is_results_locked %}
+              {# Results published: block all voting, show results link #}
+              <div style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1.25rem;background:rgba(255,107,157,0.08);border:1px solid rgba(255,107,157,0.2);border-radius:var(--radius-md);flex:1;">
+                <span style="font-size:1.2rem;">🔒</span>
+                <div>
+                  <div style="font-size:0.85rem;font-weight:600;color:var(--accent);">Voting Closed</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);">Results have been published by the admin.</div>
+                </div>
+              </div>
+              <a href="{% url 'voting:election_results' item.election.id %}" class="btn btn-primary">
+                📊 View Results
+              </a>
+
+            {% elif item.status == 'active' %}
+              {% if item.fully_voted %}
+                <button class="btn btn-success" disabled>✅ All Votes Cast</button>
+                {% if item.election.is_published %}
+                <a href="{% url 'voting:election_results' item.election.id %}" class="btn btn-outline">📊 View Results</a>
+                {% endif %}
+              {% else %}
+                <a href="{% url 'voting:election_detail' item.election.id %}" class="btn btn-primary">
+                  🗳️ Vote Now
+                </a>
+              {% endif %}
+
+            {% elif item.status == 'scheduled' %}
+              <button class="btn btn-outline" disabled>⏳ Not started yet</button>
+
+            {% elif item.election.is_published %}
+              <a href="{% url 'voting:election_results' item.election.id %}" class="btn btn-outline">
+                📊 View Results
+              </a>
+
+            {% else %}
+              <button class="btn btn-outline" disabled>🔒 Results pending</button>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+    {% else %}
+    <div class="card no-elections">
+      <div style="font-size:4rem;margin-bottom:1rem;">📭</div>
+      <h3>No Elections Assigned</h3>
+      <p style="margin-top:0.5rem;">
+        You haven't been assigned to any elections yet.<br>
+        Contact your college administrator.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/countdown.js' %}"></script>
+{% endblock %}

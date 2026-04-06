@@ -1,0 +1,75 @@
+{% extends 'web_admin/base_admin.html' %}
+
+{% block admin_title %}Elections{% endblock %}
+{% block admin_title_display %}Elections{% endblock %}
+{% block breadcrumb %}Manage all elections{% endblock %}
+
+{% block admin_content %}
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+  <div></div>
+  <a href="{% url 'web_admin:election_create' %}" class="btn btn-primary">
+    ➕ Create Election
+  </a>
+</div>
+
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Start</th>
+        <th>End</th>
+        <th>Voters</th>
+        <th>Votes</th>
+        <th>Published</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for election in elections %}
+      <tr>
+        <td style="color:var(--text-primary);font-weight:500;">{{ election.name }}</td>
+        <td>
+          {% if election.status == 'active' %}
+            <span class="badge badge-active">Live</span>
+          {% elif election.status == 'scheduled' %}
+            <span class="badge badge-scheduled">Scheduled</span>
+          {% else %}
+            <span class="badge badge-ended">Ended</span>
+          {% endif %}
+        </td>
+        <td style="font-size:0.82rem;">{{ election.start_time|date:"d M Y" }}<br><span style="color:var(--text-muted);">{{ election.start_time|date:"h:i A" }}</span></td>
+        <td style="font-size:0.82rem;">{{ election.end_time|date:"d M Y" }}<br><span style="color:var(--text-muted);">{{ election.end_time|date:"h:i A" }}</span></td>
+        <td>{{ election.voter_count }}</td>
+        <td>{{ election.vote_count }}</td>
+        <td>
+          <form method="POST" action="{% url 'web_admin:election_publish' election.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm" style="{% if election.is_published %}background:rgba(108,99,255,0.15);color:var(--primary-light);border:1px solid rgba(108,99,255,0.3){% else %}background:rgba(255,255,255,0.05);color:var(--text-muted);border:1px solid var(--glass-border){% endif %}">
+              {% if election.is_published %}📢 Published{% else %}🔒 Draft{% endif %}
+            </button>
+          </form>
+        </td>
+        <td>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <a href="{% url 'web_admin:election_detail' election.id %}" class="btn btn-outline btn-sm">Manage</a>
+            <a href="{% url 'web_admin:live_results' election.id %}" class="btn btn-sm" style="background:rgba(0,217,163,0.15);color:var(--success);border:1px solid rgba(0,217,163,0.3);">Results</a>
+            <form method="POST" action="{% url 'web_admin:election_delete' election.id %}" style="display:inline;" onsubmit="return confirm('Delete this election and all its data?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;padding:3rem;color:var(--text-muted);">
+        No elections created yet. <a href="{% url 'web_admin:election_create' %}">Create one →</a>
+      </td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}
