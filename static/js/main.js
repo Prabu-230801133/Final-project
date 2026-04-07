@@ -37,54 +37,54 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// ─── Box Page Transition Logic ───
+// ─── Circular Ripple Page Transition ───
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('pageTransition');
-  
+
   if (overlay) {
-    // 1. Uncover the new page smoothly
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        overlay.classList.add('slide-down');
-      });
-    });
+    // On page arrival: overlay is already covering (circle-shown), now collapse it away
+    overlay.classList.add('circle-shown');
+    // Force reflow so the snap is applied before we start the collapse animation
+    void overlay.offsetWidth;
+    overlay.classList.remove('circle-shown');
+    overlay.classList.add('circle-collapse');
   }
 
-  // 2. Intercept internal link clicks to cover the page before routing
+  // Intercept all internal navigation link clicks
   document.querySelectorAll('a[href]').forEach(link => {
     link.addEventListener('click', (e) => {
       const target = link.getAttribute('href');
-      
-      // Skip `#` links, external links, tabs, JS interactions, emails, etc.
-      if (!target || target.startsWith('#') || target.startsWith('javascript:') || link.target === '_blank' || link.hasAttribute('download') || e.ctrlKey || e.metaKey || target.match(/^(mailto|tel):/)) return;
-      
+
+      // Skip non-navigating links
+      if (
+        !target ||
+        target.startsWith('#') ||
+        target.startsWith('javascript:') ||
+        link.target === '_blank' ||
+        link.hasAttribute('download') ||
+        e.ctrlKey || e.metaKey ||
+        target.match(/^(mailto|tel):/)
+      ) return;
+
       try {
         const url = new URL(target, window.location.origin);
-        if (url.origin !== window.location.origin) return; // external link
-      } catch (err) {
-        return; // malformed url
-      }
+        if (url.origin !== window.location.origin) return;
+      } catch (err) { return; }
 
-      if (link.getAttribute('role') === 'button' || link.classList.contains('no-transition')) return;
+      if (link.classList.contains('no-transition')) return;
 
       e.preventDefault();
-      
+
       if (overlay) {
-        // Prepare overlay at top
-        overlay.classList.remove('slide-down');
-        overlay.classList.add('reset');
-        
-        // Force reflow
-        void overlay.offsetWidth;
-        
-        // Slide down to cover screen
-        overlay.classList.remove('reset');
-        overlay.classList.add('slide-in');
-        
-        // Wait for animation to finish before actually redirecting
+        // Reset to tiny dot (no animation)
+        overlay.classList.remove('circle-collapse', 'circle-shown');
+        void overlay.offsetWidth; // force reflow
+        // Expand circle to cover screen
+        overlay.classList.add('circle-expand');
+        // After expand animation, navigate
         setTimeout(() => {
           window.location.assign(link.href);
-        }, 450); 
+        }, 520);
       } else {
         window.location.assign(link.href);
       }
@@ -92,13 +92,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// 3. Fix BFCache (when user presses back button in browser, page shouldn't be covered)
+// BFCache: browser Back/Forward restores page from cache — collapse overlay
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
     const overlay = document.getElementById('pageTransition');
     if (overlay) {
-      overlay.classList.remove('slide-in', 'reset');
-      overlay.classList.add('slide-down');
+      overlay.classList.remove('circle-expand', 'circle-collapse');
+      overlay.classList.add('circle-shown');
+      void overlay.offsetWidth;
+      overlay.classList.remove('circle-shown');
+      overlay.classList.add('circle-collapse');
     }
   }
 });

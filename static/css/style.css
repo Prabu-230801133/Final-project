@@ -851,37 +851,43 @@ tr:hover td {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
 }
 
-/* ─── Box Movement Page Transition ─── */
+/* ─── Circular Ripple Page Transition ─── */
 .page-transition {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
+  inset: 0;
+  width: 100vw;
   height: 100vh;
-  background: var(--bg-surface);
+  /* Gradient that looks like a glowing orb expanding */
+  background: radial-gradient(circle at bottom right, var(--primary) 0%, #1a1a2e 60%);
   z-index: 999999;
   pointer-events: none;
-  /* Phase 1: On fresh load, block covers screen initially */
-  transform: translateY(0);
-  transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+  /* Start as a tiny circle at bottom-right corner */
+  clip-path: circle(0% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0s; /* No transition initially */
 }
 
-.page-transition.slide-down {
-  /* Phase 2: Slides down to reveal the loaded page */
-  transform: translateY(100%);
+[data-theme="light"] .page-transition {
+  background: radial-gradient(circle at bottom right, var(--primary) 0%, var(--bg-surface) 70%);
 }
 
-.page-transition.reset {
-  /* Phase 3: Snap instantly to top, ready to slide down again over screen */
-  transition: none;
-  transform: translateY(-100%);
-}
-
-.page-transition.slide-in {
-  /* Phase 4: Slide down to cover the screen just prior to redirect */
-  transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
-  transform: translateY(0);
+/* Phase: Cover — circle expands to fill screen */
+.page-transition.circle-expand {
+  clip-path: circle(150% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0.55s cubic-bezier(0.65, 0, 0.35, 1);
   pointer-events: all;
+}
+
+/* Phase: Revealed — instantly reset to hidden after new page loads */
+.page-transition.circle-shown {
+  clip-path: circle(150% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: none; /* snap with no animation */
+}
+
+/* Phase: Uncover — circle collapses away to reveal new page */
+.page-transition.circle-collapse {
+  clip-path: circle(0% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
 }
 
 /* Override transition for interactive elements to avoid sluggishness */
