@@ -140,6 +140,21 @@
 <script>
 // Chart.js — Votes per Election Bar Chart
 const chartPayload = JSON.parse(document.getElementById('chart-data').textContent);
+
+// Check if there are zero total votes across all charted elections
+const totalVotesInChart = chartPayload.data.reduce((sum, val) => sum + val, 0);
+let finalLabels = chartPayload.labels;
+let finalData = chartPayload.data;
+let finalColors = ['#6C63FF', '#FF6B9D', '#00D9A3', '#FFB347', '#4ECDC4', '#FF5E7A', '#A363FF'];
+let tooltipEnabled = true;
+
+if (chartPayload.labels.length === 0 || totalVotesInChart === 0) {
+  finalLabels = ['No votes cast yet'];
+  finalData = [1];
+  finalColors = ['rgba(108, 99, 255, 0.15)'];
+  tooltipEnabled = false;
+}
+
 const ctx = document.getElementById('votesChart').getContext('2d');
 const isLightMode = document.documentElement.getAttribute('data-theme') === 'light';
 const textColor = isLightMode ? 'rgba(26, 26, 46, 0.72)' : 'rgba(240,240,255,0.65)';
@@ -147,15 +162,13 @@ const textColor = isLightMode ? 'rgba(26, 26, 46, 0.72)' : 'rgba(240,240,255,0.6
 const chartInstance = new Chart(ctx, {
   type: 'doughnut',
   data: {
-    labels: chartPayload.labels,
+    labels: finalLabels,
     datasets: [{
       label: 'Votes Cast',
-      data: chartPayload.data,
-      backgroundColor: [
-        '#6C63FF', '#FF6B9D', '#00D9A3', '#FFB347', '#4ECDC4', '#FF5E7A', '#A363FF'
-      ],
+      data: finalData,
+      backgroundColor: finalColors,
       borderWidth: 0,
-      hoverOffset: 6
+      hoverOffset: totalVotesInChart === 0 ? 0 : 6
     }]
   },
   options: {
@@ -163,6 +176,9 @@ const chartInstance = new Chart(ctx, {
     maintainAspectRatio: false,
     cutout: '65%',
     plugins: {
+      tooltip: {
+        enabled: tooltipEnabled
+      },
       legend: { 
         display: true, 
         position: 'right',

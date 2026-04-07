@@ -56,8 +56,8 @@ What would you like to know?`;
     const html = `
       <!-- Chat toggle button -->
       <button id="votex-chat-toggle" aria-label="Open VoteX AI Assistant" title="VoteX AI Assistant">
-        <span class="chat-icon">🗳️</span>
-        <span class="close-icon">✕</span>
+        <span class="chat-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></span>
+        <span class="close-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></span>
         <div id="chat-badge">1</div>
       </button>
 
@@ -65,7 +65,7 @@ What would you like to know?`;
       <div id="votex-chat-window" role="dialog" aria-label="VoteX AI Assistant Chat">
         <!-- Header -->
         <div id="chat-header">
-          <div class="chat-avatar">🤖</div>
+          <div class="chat-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
           <div class="chat-header-info">
             <h4>VoteX Assistant</h4>
             <div class="chat-status">Online · Powered by Groq AI</div>
@@ -226,7 +226,7 @@ What would you like to know?`;
     const el = document.createElement('div');
     el.className = 'chat-msg user';
     el.innerHTML = `
-      <div class="msg-avatar">👤</div>
+      <div class="msg-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
       <div class="msg-bubble">${escapeHtml(text)}</div>
     `;
     messagesEl.appendChild(el);
@@ -240,7 +240,7 @@ What would you like to know?`;
     const el = document.createElement('div');
     el.className = 'chat-msg bot';
     el.innerHTML = `
-      <div class="msg-avatar">🤖</div>
+      <div class="msg-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
       <div class="msg-bubble">${renderMarkdown(text)}</div>
     `;
     messagesEl.appendChild(el);
@@ -258,7 +258,7 @@ What would you like to know?`;
     el.className = 'chat-msg bot';
     el.id = 'chat-typing';
     el.innerHTML = `
-      <div class="msg-avatar">🤖</div>
+      <div class="msg-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div>
       <div class="msg-bubble">
         <div class="typing-dots">
           <span></span><span></span><span></span>
@@ -338,13 +338,13 @@ What would you like to know?`;
   function appendUserMessageDOM(text) {
     const el = document.createElement('div');
     el.className = 'chat-msg user';
-    el.innerHTML = `<div class="msg-avatar">👤</div><div class="msg-bubble">${escapeHtml(text)}</div>`;
+    el.innerHTML = `<div class="msg-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="msg-bubble">${escapeHtml(text)}</div>`;
     messagesEl.appendChild(el);
   }
   function appendBotMessageDOM(text) {
     const el = document.createElement('div');
     el.className = 'chat-msg bot';
-    el.innerHTML = `<div class="msg-avatar">🤖</div><div class="msg-bubble">${renderMarkdown(text)}</div>`;
+    el.innerHTML = `<div class="msg-avatar"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg></div><div class="msg-bubble">${renderMarkdown(text)}</div>`;
     messagesEl.appendChild(el);
   }
 

@@ -6,15 +6,49 @@
   <meta name="description" content="{% block meta_description %}College Voting System — Secure, Transparent Elections{% endblock %}">
   <title>{% block title %}College Voting System{% endblock %}</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=8">
-  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=8">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=10">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=10">
   {% block extra_css %}{% endblock %}
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗳️</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='10' fill='%236C63FF'/%3E%3Cpath d='M7 16 L16 21 L25 16 L25 24 C25 25.1 24.1 26 23 26 L9 26 C7.9 26 7 25.1 7 24 Z' fill='white' opacity='0.2'/%3E%3Cpath d='M7 16 L16 21 L25 16' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M11 11.5 L15 15.5 L22 8' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 </head>
 <body class="{% block body_class %}{% endblock %}">
 
   <!-- Page Transition Overlay -->
   <div id="pageTransition" class="page-transition"></div>
+
+  <!-- Process Loader (vote submit / OTP verify / page load buffer) -->
+  <div id="process-loader" role="status" aria-label="Processing" aria-live="polite">
+    <div class="process-loader-ring">
+      <!-- Spinning gradient ring -->
+      <svg viewBox="0 0 80 80">
+        <defs>
+          <linearGradient id="loaderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#4F46E5"/>
+            <stop offset="50%" stop-color="#7C3AED"/>
+            <stop offset="100%" stop-color="#EC4899"/>
+          </linearGradient>
+        </defs>
+        <circle cx="40" cy="40" r="35"/>
+      </svg>
+      <!-- Static VoteX icon inside the ring -->
+      <div class="process-loader-icon">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="10" fill="url(#vxGradLoader)"/>
+          <path d="M7 16 L16 21 L25 16 L25 24 C25 25.1 24.1 26 23 26 L9 26 C7.9 26 7 25.1 7 24 Z" fill="white" fill-opacity="0.2"/>
+          <path d="M7 16 L16 21 L25 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11 11.5 L15 15.5 L22 8" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="vxGradLoader" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#4F46E5"/><stop offset="0.5" stop-color="#7C3AED"/><stop offset="1" stop-color="#EC4899"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+    </div>
+    <div class="process-loader-text" id="process-loader-text">Loading…</div>
+    <div class="process-loader-sub" id="process-loader-sub">Please wait</div>
+    <div class="process-loader-dots"><span></span><span></span><span></span></div>
+  </div>
 
   <!-- Floating Orbs for Visual Depth -->
   <div style="position:fixed;bottom:-150px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(255,107,157,0.1) 0%,transparent 70%);pointer-events:none;z-index:-1;"></div>
@@ -25,9 +59,17 @@
     <div style="flex: 1; display: flex; justify-content: flex-start;">
       <a href="{% url 'home' %}" class="navbar-brand">
         <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="32" height="32" rx="8" fill="url(#g)"/>
-          <text x="7" y="23" font-size="18" fill="white">🗳</text>
-          <defs><linearGradient id="g" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6C63FF"/><stop offset="1" stop-color="#FF6B9D"/></linearGradient></defs>
+          <rect width="32" height="32" rx="10" fill="url(#vxGrad)"/>
+          <path d="M7 16 L16 21 L25 16 L25 24 C25 25.1 24.1 26 23 26 L9 26 C7.9 26 7 25.1 7 24 Z" fill="white" fill-opacity="0.2"/>
+          <path d="M7 16 L16 21 L25 16" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11 11.5 L15 15.5 L22 8" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="vxGrad" x1="0" y1="0" x2="32" y2="32">
+              <stop stop-color="#4F46E5"/>
+              <stop offset="0.5" stop-color="#7C3AED"/>
+              <stop offset="1" stop-color="#EC4899"/>
+            </linearGradient>
+          </defs>
         </svg>
         VoteX
       </a>
@@ -91,8 +133,8 @@
   </footer>
   {% endblock footer %}
 
-  <script src="{% static 'js/main.js' %}?v=8"></script>
-  <script src="{% static 'js/chatbot.js' %}?v=8"></script>
+  <script src="{% static 'js/main.js' %}?v=10"></script>
+  <script src="{% static 'js/chatbot.js' %}?v=10"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

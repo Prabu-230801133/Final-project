@@ -1,7 +1,49 @@
 /**
  * main.js — Global JavaScript for VoteX
- * Handles: alert auto-dismiss, navbar scroll effects, page transitions
+ * Handles: alert auto-dismiss, navbar scroll effects, page transitions, process loader
  */
+
+/* ═══════════════════════════════════════════════════════════
+   VoteXLoader — branded process overlay (z-index: 999998)
+   Sits just BELOW the circular page-transition (999999)
+   so both can animate independently.
+
+   Usage:
+     VoteXLoader.show('Submitting Vote…', 'Encrypting your ballot');
+     VoteXLoader.hide();
+     VoteXLoader.setText('Verifying OTP…', 'Cross-checking token');
+   ═══════════════════════════════════════════════════════════ */
+const VoteXLoader = (() => {
+  let _loader, _text, _sub;
+
+  function _init() {
+    _loader = document.getElementById('process-loader');
+    _text   = document.getElementById('process-loader-text');
+    _sub    = document.getElementById('process-loader-sub');
+  }
+
+  function show(title = 'Loading…', subtitle = 'Please wait') {
+    if (!_loader) _init();
+    if (!_loader) return;
+    if (_text) _text.textContent = title;
+    if (_sub)  _sub.textContent  = subtitle;
+    _loader.classList.add('visible');
+  }
+
+  function hide() {
+    if (!_loader) _init();
+    if (_loader) _loader.classList.remove('visible');
+  }
+
+  function setText(title, subtitle) {
+    if (!_loader) _init();
+    if (_text && title)    _text.textContent = title;
+    if (_sub  && subtitle) _sub.textContent  = subtitle;
+  }
+
+  return { show, hide, setText };
+})();
+
 
 // ─── Auto-dismiss flash messages ───
 document.querySelectorAll('.alert').forEach(alert => {
@@ -54,7 +96,11 @@ document.querySelectorAll('a').forEach(anchor => {
   });
 });
 
-// ─── Circular Ripple Page Transition ───
+// ─── Show glass loader immediately on every script parse (before DOM is ready) ───
+// This catches the initial page buffer while resources load.
+VoteXLoader.show('Loading…', 'Preparing your experience');
+
+// ─── Circular Ripple Page Transition + Page-Load Loader ───
 document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('pageTransition');
 
@@ -64,6 +110,9 @@ document.addEventListener('DOMContentLoaded', () => {
     void overlay.offsetWidth; // force reflow
     overlay.classList.remove('circle-shown');
     overlay.classList.add('circle-collapse');
+
+    // Hide the glass loader once the circle finishes collapsing
+    setTimeout(() => VoteXLoader.hide(), 560);
 
     // After collapse animation, check if we need to scroll to a stored hash anchor
     const pendingHash = sessionStorage.getItem('scrollToHash');
@@ -78,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }, 650);
     }
+  } else {
+    // No circle overlay on this page — just hide the glass loader
+    VoteXLoader.hide();
   }
 
   // Intercept all internal navigation link clicks
@@ -117,6 +169,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
       e.preventDefault();
 
+      // Show glass loader immediately before the circle expands
+      VoteXLoader.show('Loading…', 'Navigating to next page');
+
       if (overlay) {
         overlay.classList.remove('circle-collapse', 'circle-shown');
         void overlay.offsetWidth; // force reflow
@@ -146,6 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // BFCache: browser Back/Forward restores page from cache — collapse overlay
 window.addEventListener('pageshow', (event) => {
   if (event.persisted) {
+    // Show loader briefly then collapse circle
+    VoteXLoader.show('Loading…', 'Restoring page');
     const overlay = document.getElementById('pageTransition');
     if (overlay) {
       overlay.classList.remove('circle-expand', 'circle-collapse');
@@ -154,8 +211,10 @@ window.addEventListener('pageshow', (event) => {
       overlay.classList.remove('circle-shown');
       overlay.classList.add('circle-collapse');
     }
+    setTimeout(() => VoteXLoader.hide(), 560);
   }
 });
+
 
 // ─── Animate stat values on scroll ───
 function animateCounter(element, target, duration = 1500) {
