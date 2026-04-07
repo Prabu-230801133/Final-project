@@ -158,14 +158,17 @@
 {% endblock %}
 
 {% block extra_js %}
+{# Inject feedback ratings as JSON so VS Code JS parser sees valid syntax #}
+<script id="feedback-data" type="application/json">
+  [{% for fb in feedbacks %}{{ fb.rating }}{% if not forloop.last %},{% endif %}{% endfor %}]
+</script>
+
 <script>
-// Rating distribution bars (built from Django template data via JS)
-const feedbacks = [
-  {% for fb in feedbacks %}{ rating: {{ fb.rating }} },{% endfor %}
-];
-const total = feedbacks.length;
+// Rating distribution bars
+const ratings = JSON.parse(document.getElementById('feedback-data').textContent);
+const total = ratings.length;
 const counts = {1:0,2:0,3:0,4:0,5:0};
-feedbacks.forEach(f => counts[f.rating]++);
+ratings.forEach(r => counts[r]++);
 [1,2,3,4,5].forEach(r => {
   const bar = document.querySelector(`[data-rating="${r}"]`);
   const cnt = document.getElementById(`count-${r}`);
