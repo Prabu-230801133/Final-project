@@ -126,6 +126,31 @@ def election_create(request):
 
 
 @web_admin_required
+def election_edit(request, election_id):
+    """Edit an existing election."""
+    election = get_object_or_404(Election, id=election_id)
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        start_time = request.POST.get('start_time')
+        end_time = request.POST.get('end_time')
+
+        if not all([name, start_time, end_time]):
+            messages.error(request, 'Name, start time, and end time are required.')
+            return render(request, 'web_admin/election_edit.html', {'election': election})
+
+        election.name = name
+        election.description = description
+        election.start_time = start_time
+        election.end_time = end_time
+        election.save()
+        messages.success(request, f'Election "{election.name}" updated successfully.')
+        return redirect('web_admin:election_detail', election_id=election.id)
+
+    return render(request, 'web_admin/election_edit.html', {'election': election})
+
+
+@web_admin_required
 def election_detail_admin(request, election_id):
     """Admin view of election detail: manage positions, candidates, voters."""
     election = get_object_or_404(Election, id=election_id)

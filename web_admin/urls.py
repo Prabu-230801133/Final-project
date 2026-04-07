@@ -11,6 +11,7 @@ urlpatterns = [
     path('elections/', views.elections_list, name='elections_list'),
     path('elections/create/', views.election_create, name='election_create'),
     path('elections/<int:election_id>/', views.election_detail_admin, name='election_detail'),
+    path('elections/<int:election_id>/edit/', views.election_edit, name='election_edit'),
     path('elections/<int:election_id>/delete/', views.election_delete, name='election_delete'),
     path('elections/<int:election_id>/publish/', views.election_publish, name='election_publish'),
 

@@ -15,7 +15,7 @@
 
   <!-- Feedback Form Card -->
   <div class="card" style="padding: 2.5rem;">
-    <form method="post" id="feedbackForm">
+    <form method="post" id="feedbackForm" novalidate>
       {% csrf_token %}
 
       <!-- Star Rating -->
@@ -37,7 +37,7 @@
         <label class="form-label" for="experience">How was the voting process?</label>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.5rem;">
           <label class="experience-card" for="exp_smooth">
-            <input type="radio" id="exp_smooth" name="experience" value="smooth" required>
+            <input type="radio" id="exp_smooth" name="experience" value="smooth">
             <span class="exp-icon">✅</span>
             <span class="exp-text">Very Smooth</span>
           </label>
@@ -127,9 +127,9 @@
 <script>
 // Highlight stars on click
 const stars = document.querySelectorAll('#starRating .star-label');
-const radios = document.querySelectorAll('#starRating input[type="radio"]');
+const starRadios = document.querySelectorAll('#starRating input[type="radio"]');
 
-radios.forEach((radio, idx) => {
+starRadios.forEach((radio, idx) => {
   radio.addEventListener('change', () => {
     stars.forEach((star, i) => {
       star.style.color = i >= idx ? '#FFB347' : 'var(--text-muted)';
@@ -147,10 +147,46 @@ stars.forEach((star, idx) => {
     if (!checked) {
       stars.forEach(s => s.style.color = 'var(--text-muted)');
     } else {
-      const checkedIdx = [...radios].indexOf(checked);
+      const checkedIdx = [...starRadios].indexOf(checked);
       stars.forEach((s, i) => { s.style.color = i >= checkedIdx ? '#FFB347' : 'var(--text-muted)'; });
     }
   });
 });
+
+// ─── Form Validation & Submission ───
+document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+  const rating = document.querySelector('#starRating input[type="radio"]:checked');
+  const experience = document.querySelector('input[name="experience"]:checked');
+
+  if (!rating) {
+    e.preventDefault();
+    showFeedbackError('⭐ Please select a star rating before submitting.');
+    return;
+  }
+
+  if (!experience) {
+    e.preventDefault();
+    showFeedbackError('Please select how your voting experience was.');
+    return;
+  }
+
+  // Valid — show loader and allow submit
+  if (typeof VoteXLoader !== 'undefined') {
+    VoteXLoader.show('Submitting Feedback…', 'Saving your response');
+  }
+});
+
+function showFeedbackError(msg) {
+  let err = document.getElementById('feedbackError');
+  if (!err) {
+    err = document.createElement('div');
+    err.id = 'feedbackError';
+    err.style.cssText = 'margin-top:1rem;padding:0.75rem 1rem;background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);border-radius:8px;color:#ff6b6b;font-size:0.88rem;';
+    document.getElementById('feedbackForm').appendChild(err);
+  }
+  err.textContent = msg;
+  err.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  setTimeout(() => { if (err) err.remove(); }, 4000);
+}
 </script>
 {% endblock %}
