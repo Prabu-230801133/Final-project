@@ -6,8 +6,8 @@
   <meta name="description" content="{% block meta_description %}College Voting System — Secure, Transparent Elections{% endblock %}">
   <title>{% block title %}College Voting System{% endblock %}</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}">
-  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=4">
   {% block extra_css %}{% endblock %}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗳️</text></svg>">
 </head>
@@ -19,14 +19,16 @@
   <!-- Navigation -->
   {% block navbar %}
   <nav class="navbar" id="mainNavbar">
-    <a href="{% url 'home' %}" class="navbar-brand">
-      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="url(#g)"/>
-        <text x="7" y="23" font-size="18" fill="white">🗳</text>
-        <defs><linearGradient id="g" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6C63FF"/><stop offset="1" stop-color="#FF6B9D"/></linearGradient></defs>
-      </svg>
-      VoteX
-    </a>
+    <div style="flex: 1; display: flex; justify-content: flex-start;">
+      <a href="{% url 'home' %}" class="navbar-brand">
+        <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="url(#g)"/>
+          <text x="7" y="23" font-size="18" fill="white">🗳</text>
+          <defs><linearGradient id="g" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6C63FF"/><stop offset="1" stop-color="#FF6B9D"/></linearGradient></defs>
+        </svg>
+        VoteX
+      </a>
+    </div>
 
     <ul class="navbar-nav" id="navLinks">
       <li><a href="{% url 'home' %}">Home</a></li>
@@ -34,9 +36,9 @@
       <li><a href="{% url 'home' %}#candidates">Candidates</a></li>
     </ul>
 
-    <div style="display:flex;align-items:center;gap:1rem;">
+    <div style="flex: 1; display:flex;align-items:center;justify-content:flex-end;gap:1rem;">
       <!-- Theme Toggle Button -->
-      <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark/light mode"
+      <button type="button" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark/light mode"
         style="background:var(--bg-card);border:1px solid var(--glass-border);border-radius:var(--radius-full);padding:0.45rem 0.9rem;cursor:pointer;font-size:1rem;color:var(--text-primary);transition:all var(--transition);display:flex;align-items:center;gap:0.4rem;">
         <span id="themeIcon">☀️</span>
         <span id="themeLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Light</span>
@@ -86,8 +88,8 @@
   </footer>
   {% endblock footer %}
 
-  <script src="{% static 'js/main.js' %}"></script>
-  <script src="{% static 'js/chatbot.js' %}"></script>
+  <script src="{% static 'js/main.js' %}?v=2"></script>
+  <script src="{% static 'js/chatbot.js' %}?v=2"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

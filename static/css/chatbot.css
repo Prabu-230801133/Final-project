@@ -310,6 +310,30 @@
 #chat-send-btn:hover:not(:disabled) { transform: scale(1.08); box-shadow: 0 4px 16px rgba(108, 99, 255, 0.6); }
 #chat-send-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
+/* ── Light Mode Overrides ───────────────────────────────────── */
+[data-theme="light"] #votex-chat-window {
+  background: rgba(240, 242, 248, 0.95);
+  border-color: rgba(108, 99, 255, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15),
+              0 0 0 1px rgba(108, 99, 255, 0.05);
+}
+[data-theme="light"] #chat-badge { border-color: #f0f2f8; }
+[data-theme="light"] #chat-header {
+  background: linear-gradient(135deg, rgba(108, 99, 255, 0.15) 0%, rgba(255, 107, 157, 0.08) 100%);
+  border-bottom-color: rgba(108, 99, 255, 0.1);
+}
+[data-theme="light"] .chat-header-info h4 { color: #1a1a2e; }
+[data-theme="light"] #chat-clear-btn { background: rgba(108, 99, 255, 0.08); border-color: rgba(108, 99, 255, 0.15); color: rgba(26, 26, 46, 0.6); }
+[data-theme="light"] #chat-clear-btn:hover { background: rgba(255,80,80,0.15); color: #ff5050; border-color: rgba(255,80,80,0.3); }
+[data-theme="light"] #chat-suggestions { border-bottom-color: rgba(108, 99, 255, 0.1); }
+[data-theme="light"] .chat-suggestion-pill { background: rgba(255, 255, 255, 0.8); color: #1a1a2e; border-color: rgba(108, 99, 255, 0.2); }
+[data-theme="light"] .chat-suggestion-pill:hover { background: rgba(108, 99, 255, 0.1); color: #6C63FF; }
+[data-theme="light"] .chat-msg.bot .msg-bubble { background: rgba(255, 255, 255, 0.9); border-color: rgba(108, 99, 255, 0.15); color: #1a1a2e; }
+[data-theme="light"] .chat-msg.user .msg-avatar { background: rgba(108, 99, 255, 0.15); }
+[data-theme="light"] #chat-input-area { background: rgba(255, 255, 255, 0.5); border-top-color: rgba(108, 99, 255, 0.15); }
+[data-theme="light"] #chat-input { background: #ffffff; border-color: rgba(108, 99, 255, 0.2); color: #1a1a2e; }
+[data-theme="light"] #chat-input::placeholder { color: rgba(26, 26, 46, 0.4); }
+
 /* ── Mobile responsive ──────────────────────────────────────── */
 @media (max-width: 480px) {
   #votex-chat-window {

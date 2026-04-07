@@ -148,7 +148,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(transparent, rgba(13,14,26,0.9));
+  background: linear-gradient(transparent, var(--bg-card));
   height: 60%;
 }
 
@@ -162,6 +162,44 @@
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ── Ticker ── */
+.ticker-wrap {
+  position: absolute;
+  top: 72px; /* Placed gently under the fixed navbar */
+  left: 0;
+  width: 100%;
+  overflow: hidden;
+  background: rgba(108, 99, 255, 0.08);
+  border-bottom: 1px solid rgba(108, 99, 255, 0.15);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 900;
+  padding: 10px 0;
+  display: flex;
+}
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-anim 20s linear infinite;
+}
+.ticker-track:hover {
+  animation-play-state: paused;
+}
+@keyframes ticker-anim {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-100% / 6)); } /* 6 duplicated groups */
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
 </style>
 {% endblock %}
 
@@ -169,6 +207,29 @@
 
 <!-- ── HERO ── -->
 <section class="hero">
+  <!-- Ticker Sub-header -->
+  <div class="ticker-wrap">
+    <div class="ticker-track">
+      <!-- Duplicate 6 times for seamless scroll even with short text -->
+      {% for i in "123456" %}
+      <div style="display:flex; flex-shrink: 0;">
+        {% if active_elections %}
+          {% for el in active_elections %}
+            <div class="ticker-item">
+              <span style="color:#00D9A3;font-weight:800;animation:blink-dot 2s infinite;">● LIVE</span> 
+              <strong>{{ el.name }}</strong> — Closes at: {{ el.end_time|date:"d M Y, h:i A" }}
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="ticker-item">
+            📭 No elections currently active. Check back later!
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
   <!-- Particles -->
   <style>
     .particle:nth-child(1)  { width:8px;  height:8px;  background:rgba(108,99,255,0.4);   top:20%; left:10%; --dur:5s;   --delay:0s;   }
@@ -347,9 +408,14 @@
 {% if election.positions.all %}
 <section class="section-wrap" id="candidates" style="padding-top:0;">
   <div class="container">
-    <h2 class="section-title">Meet the <span class="text-gradient">Candidates</span>
-      <span style="font-size:1rem;color:var(--text-muted);font-weight:400;"> — {{ election.name }}</span>
-    </h2>
+    <div style="text-align: center; margin-bottom: 3rem;">
+      <h2 class="section-title centered" style="display:inline-block; margin-bottom: 1rem;">
+        Meet the <span class="text-gradient">Candidates</span>
+      </h2>
+      <div style="font-size: 1.35rem; color: var(--primary); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.5rem;">
+        {{ election.name }}
+      </div>
+    </div>
 
     {% for position in election.positions.all %}
     {% if position.candidates.all %}
@@ -424,7 +490,7 @@
           <div style="position:relative;padding-top:75%;overflow:hidden;">
             <img src="{{ w.winner.photo_url }}" alt="{{ w.winner.name }}"
               style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
-            <div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(13,14,26,0.95));"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 40%,var(--bg-card));"></div>
           </div>
 
           <!-- Info -->

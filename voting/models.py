@@ -116,10 +116,11 @@ class Candidate(models.Model):
 
     @property
     def photo_url(self):
-        """Returns photo URL or a placeholder."""
-        if self.photo:
+        """Returns photo URL or a modern dynamic placeholder."""
+        if self.photo and hasattr(self.photo, 'url'):
             return self.photo.url
-        return '/static/img/default_candidate.png'
+        # Modern SVG data URI placeholder for missing candidate photo
+        return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%236C63FF' opacity='0.15'/%3E%3Ccircle cx='50' cy='40' r='20' fill='%236C63FF' opacity='0.7'/%3E%3Cpath d='M20,95 C20,70 80,70 80,95' fill='%236C63FF' opacity='0.7'/%3E%3C/svg%3E"
 
 
 class Vote(models.Model):

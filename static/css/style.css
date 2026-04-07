@@ -275,6 +275,11 @@ a:hover { color: var(--accent); }
 
 textarea.form-control { resize: vertical; min-height: 100px; }
 
+select.form-control option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
 /* ─── Navigation ─── */
 .navbar {
   position: fixed;
@@ -291,6 +296,11 @@ textarea.form-control { resize: vertical; min-height: 100px; }
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--glass-border);
   transition: all var(--transition);
+}
+
+.navbar.scrolled {
+  background: rgba(13, 14, 26, 0.98);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.4);
 }
 
 .navbar-brand {
@@ -877,6 +887,11 @@ tr:hover td {
 [data-theme="light"] .navbar {
   background: rgba(240, 242, 248, 0.88);
   border-bottom-color: rgba(108, 99, 255, 0.15);
+}
+
+[data-theme="light"] .navbar.scrolled {
+  background: rgba(240, 242, 248, 0.98);
+  box-shadow: 0 4px 30px rgba(108, 99, 255, 0.15);
 }
 
 [data-theme="light"] .sidebar {
