@@ -14,7 +14,7 @@ from django.db.models import Count, Q, Avg
 from voting.models import Election, Position, Candidate, Vote, UserElectionMapping, VoteFeedback, TieBreaker
 from accounts.models import CustomUser
 from accounts.decorators import web_admin_required
-from accounts.utils import send_election_scheduled_email, send_voting_reminder_email
+from accounts.utils import send_election_scheduled_email, send_voting_reminder_email, send_results_published_email
 
 
 def _check_and_send_reminders():
@@ -185,12 +185,7 @@ def election_publish(request, election_id):
                 continue
             tied_candidates = [c for c in candidates if c.vote_count == max_votes]
             if len(tied_candidates) > 1:
-                # Check if tie-break already resolved
-                already_resolved = TieBreaker.objects.filter(
-                    election=election, position=position
-                ).exists()
-                if not already_resolved:
-                    unresolved_ties.append(position)
+                unresolved_ties.append(position)
 
         if unresolved_ties:
             messages.warning(
@@ -203,6 +198,15 @@ def election_publish(request, election_id):
     election.save(update_fields=['is_published'])
     status = 'published' if election.is_published else 'unpublished'
     messages.success(request, f'Results {status} for "{election.name}".')
+    
+    if election.is_published:
+        assigned_users = [
+            m.user for m in UserElectionMapping.objects.filter(election=election).select_related('user')
+            if m.user.email
+        ]
+        if assigned_users:
+            send_results_published_email(assigned_users, election)
+            
     return redirect('web_admin:election_detail', election_id=election_id)
 
 
@@ -221,16 +225,38 @@ def resolve_tie(request, election_id):
             winner_id = request.POST.get(f'winner_{position.id}')
             if winner_id:
                 candidate = get_object_or_404(Candidate, id=winner_id, position=position)
+                # Admin casts a deciding vote to give the candidate genuine majority
+                Vote.objects.update_or_create(
+                    voter=request.user,
+                    election=election,
+                    position=position,
+                    defaults={'candidate': candidate}
+                )
+                # ALSO RECORD THE TIEBREAKER INSTANCE
                 TieBreaker.objects.update_or_create(
                     election=election,
                     position=position,
                     defaults={
                         'winner': candidate,
                         'decided_by': request.user,
+                        'decided_at': timezone.now()
                     }
                 )
                 resolved += 1
-        messages.success(request, f'Tie-break decisions saved for {resolved} position(s).')
+        messages.success(request, f'Tie-break decisions saved. {resolved} candidate(s) received the majority vote.')
+        
+        # Publish the election automatically after resolving ties
+        election.is_published = True
+        election.save(update_fields=['is_published'])
+        
+        assigned_users = [
+            m.user for m in UserElectionMapping.objects.filter(election=election).select_related('user')
+            if m.user.email
+        ]
+        if assigned_users:
+            send_results_published_email(assigned_users, election)
+            
+        messages.success(request, f'Results for "{election.name}" have been published.')
         return redirect('web_admin:election_detail', election_id=election_id)
 
     # Build tied positions data

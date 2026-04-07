@@ -83,6 +83,18 @@ body {
   min-height: 100vh;
   line-height: 1.6;
   overflow-x: hidden;
+  animation: pageFadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Animated gradient background */

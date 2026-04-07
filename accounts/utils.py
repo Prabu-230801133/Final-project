@@ -95,6 +95,11 @@ Starts    : {election.start_time.strftime('%d %B %Y, %I:%M %p')}
 Ends      : {election.end_time.strftime('%d %B %Y, %I:%M %p')}
 Description: {election.description or 'N/A'}
 
+Your Login Credentials:
+-----------------------
+Username : {user.username}
+Password : [Your registered password, Default: Student@123]
+
 Please log in on time to cast your vote.
 Login: http://localhost:8000/accounts/login/
 
@@ -178,3 +183,33 @@ College Election Committee
         return True
     except Exception:
         return False
+
+
+def send_results_published_email(users, election):
+    """
+    Send an email notifying students that election results have been published.
+    """
+    subject = f"Results Published: {election.name}"
+    for user in users:
+        if not user.email:
+            continue
+        message = f"""
+Dear {user.get_full_name() or user.username},
+
+The results for "{election.name}" have just been made public!
+
+You can now log in to the portal and view the detailed outcome of the election, including candidate vote counts and percentages.
+
+View Results: http://localhost:8000/voting/results/{election.id}/
+
+Best regards,
+College Election Committee
+        """.strip()
+
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
