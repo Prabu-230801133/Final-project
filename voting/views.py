@@ -71,10 +71,13 @@ def home(request):
         start_time__gt=now
     ).order_by('start_time')[:3]
 
+    ticker_elections = [e for e in active_elections if not e.is_published]
+
     context = {
         'active_elections': active_elections,
         'published_results': published_results,
         'upcoming_elections': upcoming_elections,
+        'ticker_elections': ticker_elections,
     }
     return render(request, 'voting/home.html', context)
 

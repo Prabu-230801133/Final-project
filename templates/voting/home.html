@@ -222,8 +222,8 @@
       <!-- Duplicate 6 times for seamless scroll even with short text -->
       {% for i in "123456" %}
       <div style="display:flex; flex-shrink: 0;">
-        {% if active_elections %}
-          {% for el in active_elections %}
+        {% if ticker_elections %}
+          {% for el in ticker_elections %}
             <div class="ticker-item">
               <span style="color:#00D9A3;font-weight:800;animation:blink-dot 2s infinite;">● LIVE</span> 
               <strong class="ticker-election-name">{{ el.name }}</strong> — Closes at: {{ el.end_time|date:"d M Y, h:i A" }}
@@ -413,7 +413,7 @@
 </section>
 
 <!-- ── CANDIDATES SHOWCASE ── -->
-{% for election in active_elections %}
+{% for election in ticker_elections %}
 {% if election.positions.all %}
 <section class="section-wrap" id="candidates" style="padding-top:0;">
   <div class="container">
