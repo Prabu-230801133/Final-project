@@ -1,0 +1,123 @@
+{% extends 'web_admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Resolve Ties{% endblock %}
+{% block admin_title_display %}Resolve Tied Positions — {{ election.name }}{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'web_admin:elections_list' %}">Elections</a> →
+  <a href="{% url 'web_admin:election_detail' election.id %}">{{ election.name }}</a> → Resolve Ties
+{% endblock %}
+
+{% block admin_content %}
+
+<div class="card" style="padding: 1.5rem; margin-bottom: 2rem; background: rgba(255,179,71,0.1); border-color: rgba(255,179,71,0.4);">
+  <p style="color: var(--warning); font-weight: 600; margin: 0;">
+    ⚠️ The following positions have tied candidates. Please select a winner for each tied position before publishing results.
+  </p>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  {% for item in tied_positions %}
+  <div class="card" style="padding: 2rem; margin-bottom: 2rem;">
+    <div style="margin-bottom: 1.5rem;">
+      <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">{{ item.position.title }}</h3>
+      <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+        {{ item.tied_candidates|length }} candidates are tied with the same vote count
+        {% if item.tied_candidates %} ({{ item.tied_candidates.0.vote_count }} vote{{ item.tied_candidates.0.vote_count|pluralize }} each){% endif %}
+      </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+      {% for candidate in item.candidates %}
+      <label for="candidate_{{ item.position.id }}_{{ candidate.id }}"
+             class="tie-candidate-card {% if item.existing_winner.id == candidate.id %}selected{% endif %}"
+             style="position: relative; cursor: pointer;">
+        <input type="radio"
+               id="candidate_{{ item.position.id }}_{{ candidate.id }}"
+               name="winner_{{ item.position.id }}"
+               value="{{ candidate.id }}"
+               {% if item.existing_winner.id == candidate.id %}checked{% endif %}
+               style="position: absolute; opacity: 0; width: 0; height: 0;">
+
+        <div style="text-align: center; padding: 1.25rem 1rem;">
+          <img src="{{ candidate.photo_url }}" alt="{{ candidate.name }}"
+               style="width: 72px; height: 72px; border-radius: 50%; object-fit: cover; margin: 0 auto 0.75rem; border: 3px solid var(--glass-border); display: block;">
+          <div style="font-weight: 600; color: var(--text-primary); font-size: 0.95rem;">{{ candidate.name }}</div>
+          <div style="margin-top: 0.4rem;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ candidate.vote_count }} vote{{ candidate.vote_count|pluralize }}</span>
+            {% if candidate in item.tied_candidates %}
+              <span class="badge badge-scheduled" style="display: block; margin-top: 0.4rem; font-size: 0.65rem;">TIED</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="tie-checkmark">✓ Selected as Winner</div>
+      </label>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+    <button type="submit" class="btn btn-primary" style="flex: 1;">
+      Save Tie-Break Decisions & Return to Election
+    </button>
+    <a href="{% url 'web_admin:election_detail' election.id %}" class="btn btn-outline">
+      Cancel
+    </a>
+  </div>
+</form>
+
+<style>
+.tie-candidate-card {
+  display: block;
+  background: var(--bg-card);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition);
+  overflow: hidden;
+}
+
+.tie-candidate-card:hover {
+  border-color: var(--primary-light);
+  transform: translateY(-2px);
+}
+
+.tie-candidate-card.selected,
+.tie-candidate-card:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(108, 99, 255, 0.15);
+  box-shadow: 0 0 30px rgba(108, 99, 255, 0.3);
+}
+
+.tie-checkmark {
+  display: none;
+  text-align: center;
+  padding: 0.5rem;
+  background: var(--grad-primary);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.tie-candidate-card:has(input:checked) .tie-checkmark {
+  display: block;
+}
+</style>
+
+<script>
+// Add selected class via JS for broader browser support
+document.querySelectorAll('.tie-candidate-card input[type="radio"]').forEach(radio => {
+  radio.addEventListener('change', () => {
+    const groupName = radio.name;
+    document.querySelectorAll(`input[name="${groupName}"]`).forEach(r => {
+      r.closest('.tie-candidate-card').classList.remove('selected');
+    });
+    radio.closest('.tie-candidate-card').classList.add('selected');
+  });
+});
+</script>
+{% endblock %}

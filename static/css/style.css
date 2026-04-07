@@ -835,3 +835,93 @@ tr:hover td {
   border-radius: var(--radius-full);
 }
 .section-title.centered::after { left: 50%; transform: translateX(-50%); }
+
+/* ─── Theme Transition (smooth switch) ─── */
+*, *::before, *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+}
+
+/* Override transition for interactive elements to avoid sluggishness */
+.btn, .card, .sidebar-nav-item, .vote-candidate-card, a {
+  transition: all var(--transition);
+}
+
+/* ─── Light Mode Variables ─── */
+[data-theme="light"] {
+  --bg-base: #f0f2f8;
+  --bg-surface: #e4e8f5;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-hover: rgba(255, 255, 255, 0.98);
+  --glass: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(108, 99, 255, 0.18);
+
+  --text-primary: #1a1a2e;
+  --text-secondary: rgba(26, 26, 46, 0.72);
+  --text-muted: rgba(26, 26, 46, 0.45);
+
+  --grad-bg: radial-gradient(ellipse at top left, #dde1f5 0%, #f0f2f8 50%, #e8eaf6 100%);
+
+  --shadow-card: 0 8px 32px rgba(108, 99, 255, 0.12);
+  --shadow-glow: 0 0 40px rgba(108, 99, 255, 0.15);
+  --shadow-btn: 0 4px 20px rgba(108, 99, 255, 0.35);
+}
+
+[data-theme="light"] body::before {
+  background: var(--grad-bg);
+}
+
+[data-theme="light"] body::after {
+  background: radial-gradient(circle, rgba(108, 99, 255, 0.08) 0%, transparent 70%);
+}
+
+[data-theme="light"] .navbar {
+  background: rgba(240, 242, 248, 0.88);
+  border-bottom-color: rgba(108, 99, 255, 0.15);
+}
+
+[data-theme="light"] .sidebar {
+  background: rgba(228, 232, 245, 0.98);
+  border-right-color: rgba(108, 99, 255, 0.15);
+}
+
+[data-theme="light"] table th {
+  background: rgba(108, 99, 255, 0.06);
+  color: rgba(26, 26, 46, 0.6);
+}
+
+[data-theme="light"] table td {
+  border-bottom-color: rgba(108, 99, 255, 0.08);
+  color: rgba(26, 26, 46, 0.72);
+}
+
+[data-theme="light"] table tr:hover td {
+  background: rgba(108, 99, 255, 0.05);
+  color: #1a1a2e;
+}
+
+[data-theme="light"] .form-control {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(108, 99, 255, 0.25);
+  color: #1a1a2e;
+}
+
+[data-theme="light"] .form-control::placeholder {
+  color: rgba(26, 26, 46, 0.4);
+}
+
+[data-theme="light"] .form-control:focus {
+  background: rgba(255, 255, 255, 1);
+  border-color: var(--primary);
+}
+
+[data-theme="light"] .stat-card { background: rgba(255, 255, 255, 0.9); }
+[data-theme="light"] .table-wrapper { background: rgba(255, 255, 255, 0.9); }
+[data-theme="light"] .countdown-unit { background: rgba(255, 255, 255, 0.85); }
+
+[data-theme="light"] .alert-success { background: rgba(0, 217, 163, 0.12); color: #007a5e; }
+[data-theme="light"] .alert-error, [data-theme="light"] .alert-danger { background: rgba(255, 94, 122, 0.12); color: #c0334d; }
+[data-theme="light"] .alert-warning { background: rgba(255, 179, 71, 0.12); color: #8a5a00; }
+[data-theme="light"] .alert-info { background: rgba(108, 99, 255, 0.12); color: #4c44cc; }
+
+[data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg-base); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(108, 99, 255, 0.3); }

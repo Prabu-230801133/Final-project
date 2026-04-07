@@ -4,6 +4,7 @@ Student-facing views:
 - Public homepage (landing page)
 - Student dashboard (assigned elections)
 - Election detail & vote casting
+- Post-vote feedback form
 - Results view
 """
 import json
@@ -12,10 +13,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db.models import Count
+from django.db.models import Count, Avg
 from accounts.decorators import student_required
 from accounts.utils import send_vote_confirmation_email
-from .models import Election, Position, Candidate, Vote, UserElectionMapping
+from .models import Election, Position, Candidate, Vote, UserElectionMapping, VoteFeedback, TieBreaker
 
 
 def home(request):
@@ -26,18 +27,15 @@ def home(request):
     """
     now = timezone.now()
 
-    # Active elections visible to public
     active_elections = Election.objects.filter(
         start_time__lte=now,
         end_time__gte=now
     ).prefetch_related('positions__candidates')
 
-    # Published elections (any — admin may publish while still active or after ending)
     published_elections = Election.objects.filter(
         is_published=True
     ).prefetch_related('positions__candidates__votes').order_by('-end_time')
 
-    # Compute winners per position for each published election
     published_results = []
     for election in published_elections:
         winners = []
@@ -45,19 +43,29 @@ def home(request):
             candidates = list(position.candidates.all())
             if not candidates:
                 continue
-            # Pick candidate with most votes (only show if votes exist)
-            winner = max(candidates, key=lambda c: c.vote_count)
-            if winner.vote_count > 0:
+            # Check for admin-decided tie-break first
+            tiebreaker = TieBreaker.objects.filter(
+                election=election, position=position
+            ).select_related('winner').first()
+            if tiebreaker:
                 winners.append({
                     'position': position.title,
-                    'winner': winner,
+                    'winner': tiebreaker.winner,
+                    'is_tiebreak': True,
                 })
+            else:
+                winner = max(candidates, key=lambda c: c.vote_count)
+                if winner.vote_count > 0:
+                    winners.append({
+                        'position': position.title,
+                        'winner': winner,
+                        'is_tiebreak': False,
+                    })
         published_results.append({
             'election': election,
             'winners': winners,
         })
 
-    # Upcoming elections (for countdown timers)
     upcoming_elections = Election.objects.filter(
         start_time__gt=now
     ).order_by('start_time')[:3]
@@ -70,7 +78,6 @@ def home(request):
     return render(request, 'voting/home.html', context)
 
 
-
 @login_required
 def student_dashboard(request):
     """
@@ -80,7 +87,6 @@ def student_dashboard(request):
     user = request.user
     now = timezone.now()
 
-    # Get elections this student is assigned to
     assignments = UserElectionMapping.objects.filter(
         user=user
     ).select_related('election').order_by('-election__start_time')
@@ -89,7 +95,6 @@ def student_dashboard(request):
     for assignment in assignments:
         election = assignment.election
 
-        # Check if student has already voted in this election
         voted_positions = Vote.objects.filter(
             voter=user,
             election=election
@@ -99,14 +104,17 @@ def student_dashboard(request):
         votes_cast = len(voted_positions)
         fully_voted = (votes_cast == total_positions and total_positions > 0)
 
+        # Check if feedback was submitted
+        has_feedback = VoteFeedback.objects.filter(voter=user, election=election).exists()
+
         elections_data.append({
             'election': election,
             'status': election.status,
             'fully_voted': fully_voted,
             'votes_cast': votes_cast,
             'total_positions': total_positions,
-            # True when admin has published results — voting is permanently closed
             'is_results_locked': election.is_published,
+            'has_feedback': has_feedback,
         })
 
     context = {
@@ -127,16 +135,13 @@ def election_detail(request, election_id):
 
     election = get_object_or_404(Election, id=election_id)
 
-    # Verify student is assigned to this election
     if not request.user.is_superuser and user.role == 'student':
         if not UserElectionMapping.objects.filter(user=user, election=election).exists():
             messages.error(request, 'You are not eligible for this election.')
             return redirect('voting:student_dashboard')
 
-    # Get all positions with candidates
     positions = election.positions.prefetch_related('candidates').all()
 
-    # Find which positions this user has already voted in
     voted_positions = set(Vote.objects.filter(
         voter=user, election=election
     ).values_list('position_id', flat=True))
@@ -152,7 +157,6 @@ def election_detail(request, election_id):
     context = {
         'election': election,
         'positions_data': positions_data,
-        # Voting blocked if election not active OR results already published
         'can_vote': election.is_active and not election.is_published,
         'now': now,
     }
@@ -164,7 +168,7 @@ def cast_vote(request, election_id):
     """
     Process vote submission (POST only).
     Enforces: one vote per student per position per election.
-    Sends confirmation email after successful vote.
+    After successful vote, redirects to feedback form.
     """
     if request.method != 'POST':
         return redirect('voting:election_detail', election_id=election_id)
@@ -172,17 +176,14 @@ def cast_vote(request, election_id):
     user = request.user
     election = get_object_or_404(Election, id=election_id)
 
-    # Verify election is active
     if not election.is_active:
         messages.error(request, 'This election is not currently active.')
         return redirect('voting:student_dashboard')
 
-    # Block voting if results have been published
     if election.is_published:
         messages.error(request, f'Results for "{election.name}" have been published. Voting is now closed.')
         return redirect('voting:election_results', election_id=election.id)
 
-    # Verify student assignment
     if user.role == 'student' and not request.user.is_superuser:
         if not UserElectionMapping.objects.filter(user=user, election=election).exists():
             messages.error(request, 'You are not eligible for this election.')
@@ -191,7 +192,6 @@ def cast_vote(request, election_id):
     errors = []
     votes_to_create = []
 
-    # Parse votes from form (field name = position_<id>, value = candidate_<id>)
     for key, value in request.POST.items():
         if key.startswith('position_') and value:
             try:
@@ -201,7 +201,6 @@ def cast_vote(request, election_id):
                 position = get_object_or_404(Position, id=position_id, election=election)
                 candidate = get_object_or_404(Candidate, id=candidate_id, position=position)
 
-                # Check if already voted for this position
                 if Vote.objects.filter(voter=user, election=election, position=position).exists():
                     errors.append(f'Already voted for {position.title}.')
                     continue
@@ -220,26 +219,68 @@ def cast_vote(request, election_id):
             messages.warning(request, err)
 
     if votes_to_create:
-        # Bulk create all votes atomically
         Vote.objects.bulk_create(votes_to_create)
 
-        # Send confirmation email (non-blocking on failure)
         try:
             send_vote_confirmation_email(user, election)
         except Exception:
-            pass  # Email failure should not block vote confirmation
+            pass
 
         messages.success(
             request,
-            f'✅ Your vote has been successfully cast in "{election.name}"!'
+            f'Your vote has been successfully cast in "{election.name}"!'
         )
 
-    return redirect('voting:vote_success', election_id=election_id)
+    # Redirect to feedback form instead of success page
+    return redirect('voting:vote_feedback', election_id=election_id)
+
+
+@login_required
+def vote_feedback(request, election_id):
+    """
+    Post-vote feedback form. Shown after casting a vote.
+    Saves VoteFeedback and then redirects to the success page.
+    """
+    election = get_object_or_404(Election, id=election_id)
+    user = request.user
+
+    # If feedback already submitted, go straight to success
+    if VoteFeedback.objects.filter(voter=user, election=election).exists():
+        return redirect('voting:vote_success', election_id=election_id)
+
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        experience = request.POST.get('experience')
+        comments = request.POST.get('comments', '').strip()
+
+        if not rating or not experience:
+            messages.error(request, 'Please provide a rating and experience.')
+        else:
+            try:
+                rating = int(rating)
+                if rating < 1 or rating > 5:
+                    raise ValueError
+            except (ValueError, TypeError):
+                messages.error(request, 'Invalid rating value.')
+                return render(request, 'voting/vote_feedback.html', {'election': election})
+
+            VoteFeedback.objects.get_or_create(
+                voter=user,
+                election=election,
+                defaults={
+                    'rating': rating,
+                    'experience': experience,
+                    'comments': comments,
+                }
+            )
+            return redirect('voting:vote_success', election_id=election_id)
+
+    return render(request, 'voting/vote_feedback.html', {'election': election})
 
 
 @login_required
 def vote_success(request, election_id):
-    """Thank-you page after voting."""
+    """Thank-you page after voting and feedback."""
     election = get_object_or_404(Election, id=election_id)
     return render(request, 'voting/vote_success.html', {'election': election})
 
@@ -248,10 +289,10 @@ def election_results(request, election_id):
     """
     Public results page for published elections.
     Shows vote counts per candidate per position.
+    Respects admin tie-break decisions.
     """
     election = get_object_or_404(Election, id=election_id)
 
-    # Only show results if published or user is admin
     if not election.is_published and not (
         request.user.is_authenticated and
         (request.user.is_superuser or request.user.role in ['web_admin', 'django_admin'])
@@ -267,19 +308,26 @@ def election_results(request, election_id):
     for position in positions:
         candidates_data = []
         total_votes = sum(c.vote_count for c in position.candidates.all())
+
+        # Check for admin tie-break decision
+        tiebreaker = TieBreaker.objects.filter(
+            election=election, position=position
+        ).select_related('winner').first()
+
         for candidate in position.candidates.all():
             pct = round((candidate.vote_count / total_votes * 100), 1) if total_votes > 0 else 0
             candidates_data.append({
                 'candidate': candidate,
                 'votes': candidate.vote_count,
                 'percentage': pct,
+                'is_tiebreak_winner': tiebreaker and tiebreaker.winner_id == candidate.id,
             })
-        # Sort by votes descending
         candidates_data.sort(key=lambda x: x['votes'], reverse=True)
         positions_data.append({
             'position': position,
             'candidates': candidates_data,
             'total_votes': total_votes,
+            'tiebreaker': tiebreaker,
         })
 
     context = {

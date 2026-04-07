@@ -14,6 +14,12 @@ urlpatterns = [
     path('elections/<int:election_id>/delete/', views.election_delete, name='election_delete'),
     path('elections/<int:election_id>/publish/', views.election_publish, name='election_publish'),
 
+    # Tie-breaking
+    path('elections/<int:election_id>/resolve-tie/', views.resolve_tie, name='resolve_tie'),
+
+    # Feedback
+    path('elections/<int:election_id>/feedback/', views.election_feedback, name='election_feedback'),
+
     # Position management
     path('elections/<int:election_id>/positions/add/', views.position_add, name='position_add'),
     path('positions/<int:position_id>/delete/', views.position_delete, name='position_delete'),

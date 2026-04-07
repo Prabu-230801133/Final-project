@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,10 +32,16 @@
       <li><a href="{% url 'home' %}">Home</a></li>
       <li><a href="{% url 'home' %}#elections">Elections</a></li>
       <li><a href="{% url 'home' %}#candidates">Candidates</a></li>
-      <li><a href="{% url 'api:elections_list' %}">API</a></li>
     </ul>
 
     <div style="display:flex;align-items:center;gap:1rem;">
+      <!-- Theme Toggle Button -->
+      <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark/light mode"
+        style="background:var(--bg-card);border:1px solid var(--glass-border);border-radius:var(--radius-full);padding:0.45rem 0.9rem;cursor:pointer;font-size:1rem;color:var(--text-primary);transition:all var(--transition);display:flex;align-items:center;gap:0.4rem;">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel" style="font-size:0.78rem;font-weight:600;color:var(--text-secondary);">Light</span>
+      </button>
+
       {% if user.is_authenticated %}
         <span style="color:var(--text-secondary);font-size:0.85rem;">👋 {{ user.get_full_name|default:user.username }}</span>
         {% if user.role == 'web_admin' or user.is_superuser %}

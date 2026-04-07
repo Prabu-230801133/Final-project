@@ -102,3 +102,39 @@ document.head.appendChild(bounceStyle);
 
 console.log('%c🗳️ VoteX Voting System', 'color:#6C63FF;font-size:16px;font-weight:bold;');
 console.log('%cBuilt with Django + MySQL', 'color:#FF6B9D;font-size:12px;');
+
+// ─── Theme Switcher Logic ───
+function setTheme(themeName) {
+  document.documentElement.setAttribute('data-theme', themeName);
+  localStorage.setItem('theme', themeName);
+  
+  const themeIcon = document.getElementById('themeIcon');
+  const themeLabel = document.getElementById('themeLabel');
+  
+  if (themeIcon && themeLabel) {
+    if (themeName === 'light') {
+      themeIcon.textContent = '🌙';
+      themeLabel.textContent = 'Dark';
+    } else {
+      themeIcon.textContent = '☀️';
+      themeLabel.textContent = 'Light';
+    }
+  }
+}
+
+function toggleTheme() {
+  if (localStorage.getItem('theme') === 'light') {
+    setTheme('dark');
+  } else {
+    setTheme('light');
+  }
+}
+
+// Initial script execution: Apply saved theme immediately
+(function() {
+  if (localStorage.getItem('theme') === 'light') {
+    setTheme('light');
+  } else {
+    setTheme('dark'); // default
+  }
+})();

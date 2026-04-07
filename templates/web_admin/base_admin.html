@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -51,19 +51,23 @@
       <a href="{% url 'admin:index' %}" class="sidebar-nav-item" target="_blank">
         <span class="icon">🔧</span> Django Admin ↗
       </a>
-      <a href="{% url 'api:elections_list' %}" class="sidebar-nav-item" target="_blank">
-        <span class="icon">🌐</span> REST API ↗
+      <a href="{% url 'home' %}" class="sidebar-nav-item">
+        <span class="icon">🏠</span> Public Site
       </a>
     </nav>
 
     <div style="padding:1rem var(--sp-xl);border-top:1px solid var(--glass-border);">
-      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">
-        Logged in as:
-      </div>
+      <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">Logged in as:</div>
       <div style="font-size:0.85rem;color:var(--text-secondary);font-weight:600;">
         {{ request.user.get_full_name|default:request.user.username }}
       </div>
-      <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-sm" style="width:100%;margin-top:0.75rem;">
+      <!-- Theme Toggle -->
+      <button id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle theme"
+        style="width:100%;margin-top:0.75rem;background:var(--bg-card);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:0.5rem;cursor:pointer;color:var(--text-primary);font-size:0.85rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;transition:all var(--transition);">
+        <span id="themeIcon">☀️</span>
+        <span id="themeLabel">Light Mode</span>
+      </button>
+      <a href="{% url 'accounts:logout' %}" class="btn btn-danger btn-sm" style="width:100%;margin-top:0.5rem;">
         Logout
       </a>
     </div>

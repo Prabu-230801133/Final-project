@@ -1,0 +1,179 @@
+{% extends 'web_admin/base_admin.html' %}
+{% load static %}
+
+{% block admin_title %}Election Feedback{% endblock %}
+{% block admin_title_display %}Voter Feedback — {{ election.name }}{% endblock %}
+{% block breadcrumb %}
+  <a href="{% url 'web_admin:elections_list' %}">Elections</a> →
+  <a href="{% url 'web_admin:election_detail' election.id %}">{{ election.name }}</a> → Feedback
+{% endblock %}
+
+{% block admin_content %}
+
+<!-- Summary Stats -->
+<div class="grid grid-4" style="margin-bottom: 2rem; gap: 1.25rem;">
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-primary">💬</div>
+    <div>
+      <div class="stat-value">{{ total_feedback }}</div>
+      <div class="stat-label">Total Responses</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-warning">⭐</div>
+    <div>
+      <div class="stat-value">{% if avg_rating %}{{ avg_rating }}/5{% else %}—{% endif %}</div>
+      <div class="stat-label">Average Rating</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon stat-icon-success">✅</div>
+    <div>
+      <div class="stat-value">{{ experience_counts.smooth }}</div>
+      <div class="stat-label">Very Smooth</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon" style="background: rgba(255,94,122,0.2); color: var(--danger);">⚠️</div>
+    <div>
+      <div class="stat-value">{{ experience_counts.problematic }}</div>
+      <div class="stat-label">Had Issues</div>
+    </div>
+  </div>
+</div>
+
+<!-- Experience Breakdown Chart -->
+{% if total_feedback > 0 %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+  <div class="card" style="padding: 1.5rem;">
+    <h3 style="font-size: 1rem; margin-bottom: 1.25rem;">Experience Breakdown</h3>
+    {% with smooth=experience_counts.smooth neutral=experience_counts.neutral problematic=experience_counts.problematic %}
+    <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+      <div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">✅ Very Smooth</span>
+          <span style="font-size: 0.85rem; color: var(--success);">{{ smooth }}</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" style="width: {% if total_feedback %}{% widthratio smooth total_feedback 100 %}{% else %}0{% endif %}%; background: linear-gradient(90deg,#00D9A3,#00b88a);"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">😐 Neutral</span>
+          <span style="font-size: 0.85rem; color: var(--warning);">{{ neutral }}</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" style="width: {% if total_feedback %}{% widthratio neutral total_feedback 100 %}{% else %}0{% endif %}%; background: linear-gradient(90deg,#FFB347,#e09030);"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 0.3rem;">
+          <span style="font-size: 0.85rem; color: var(--text-secondary);">⚠️ Had Issues</span>
+          <span style="font-size: 0.85rem; color: var(--danger);">{{ problematic }}</span>
+        </div>
+        <div class="progress">
+          <div class="progress-bar" style="width: {% if total_feedback %}{% widthratio problematic total_feedback 100 %}{% else %}0{% endif %}%; background: linear-gradient(90deg,#FF5E7A,#e0405a);"></div>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+  </div>
+
+  <div class="card" style="padding: 1.5rem;">
+    <h3 style="font-size: 1rem; margin-bottom: 1.25rem;">Rating Distribution</h3>
+    <div style="display: flex; flex-direction: column; gap: 0.6rem;">
+      {% for star in "54321" %}
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 0.85rem; color: #FFB347; min-width: 24px;">{{ star }}★</span>
+        <div class="progress" style="flex: 1; margin-top: 0;">
+          <div class="progress-bar" style="width: 0%; background: linear-gradient(90deg,#FFB347,#e09030);" data-rating="{{ star }}"></div>
+        </div>
+        <span style="font-size: 0.8rem; color: var(--text-muted); min-width: 20px;" id="count-{{ star }}">0</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Feedback Table -->
+<div class="table-wrapper">
+  <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+    <h3 style="font-size: 1rem;">All Responses</h3>
+    <span style="color: var(--text-muted); font-size: 0.85rem;">{{ total_feedback }} response{{ total_feedback|pluralize }}</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Voter</th>
+        <th>Rating</th>
+        <th>Experience</th>
+        <th>Comments</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for fb in feedbacks %}
+      <tr>
+        <td style="color: var(--text-primary); font-weight: 500;">
+          {{ fb.voter.get_full_name|default:fb.voter.username }}
+          <br><span style="font-size: 0.78rem; color: var(--text-muted);">{{ fb.voter.username }}</span>
+        </td>
+        <td>
+          <span style="color: #FFB347; font-size: 1.1rem;">
+            {% for i in "12345" %}{% if forloop.counter <= fb.rating %}★{% else %}☆{% endif %}{% endfor %}
+          </span>
+          <span style="color: var(--text-muted); font-size: 0.8rem;">({{ fb.rating }}/5)</span>
+        </td>
+        <td>
+          {% if fb.experience == 'smooth' %}
+            <span class="badge badge-active">✅ Very Smooth</span>
+          {% elif fb.experience == 'neutral' %}
+            <span class="badge badge-scheduled">😐 Neutral</span>
+          {% else %}
+            <span class="badge badge-ended">⚠️ Had Issues</span>
+          {% endif %}
+        </td>
+        <td style="max-width: 280px; color: var(--text-secondary);">
+          {{ fb.comments|default:"—"|truncatechars:120 }}
+        </td>
+        <td style="white-space: nowrap;">{{ fb.submitted_at|date:"d M Y, H:i" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+          No feedback submitted yet for this election.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div style="margin-top: 1.5rem;">
+  <a href="{% url 'web_admin:election_detail' election.id %}" class="btn btn-outline">← Back to Election</a>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Rating distribution bars (built from Django template data via JS)
+const feedbacks = [
+  {% for fb in feedbacks %}{ rating: {{ fb.rating }} },{% endfor %}
+];
+const total = feedbacks.length;
+const counts = {1:0,2:0,3:0,4:0,5:0};
+feedbacks.forEach(f => counts[f.rating]++);
+[1,2,3,4,5].forEach(r => {
+  const bar = document.querySelector(`[data-rating="${r}"]`);
+  const cnt = document.getElementById(`count-${r}`);
+  if (bar && cnt) {
+    const pct = total ? Math.round(counts[r] / total * 100) : 0;
+    setTimeout(() => { bar.style.width = pct + '%'; }, 200);
+    cnt.textContent = counts[r];
+  }
+});
+</script>
+{% endblock %}

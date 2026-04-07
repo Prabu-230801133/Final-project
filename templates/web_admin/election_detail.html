@@ -12,6 +12,9 @@
   <a href="{% url 'web_admin:live_results' election.id %}" class="btn btn-success">
     📊 Live Results
   </a>
+  <a href="{% url 'web_admin:election_feedback' election.id %}" class="btn btn-outline" style="border-color: #FFB347; color: #FFB347;">
+    💬 Feedback ({{ feedback_count }})
+  </a>
   <form method="POST" action="{% url 'web_admin:election_publish' election.id %}" style="display:inline;">
     {% csrf_token %}
     <button type="submit" class="btn btn-outline">

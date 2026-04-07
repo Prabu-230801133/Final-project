@@ -24,6 +24,10 @@ class Election(models.Model):
         default=False,
         help_text='Publish results to public homepage'
     )
+    reminder_sent = models.BooleanField(
+        default=False,
+        help_text='Whether the 2-hour reminder email has been sent'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(
@@ -92,7 +96,6 @@ class Candidate(models.Model):
     )
     name = models.CharField(max_length=200)
     bio = models.TextField(blank=True)
-    # Photo stored in Cloudinary (or local media if not configured)
     photo = models.ImageField(
         upload_to='candidates/',
         blank=True,
@@ -147,7 +150,6 @@ class Vote(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # Prevents duplicate votes: one student per position per election
         unique_together = [('voter', 'election', 'position')]
         ordering = ['-timestamp']
 
@@ -158,7 +160,6 @@ class Vote(models.Model):
 class UserElectionMapping(models.Model):
     """
     Maps which students are eligible to vote in which elections.
-    Admin assigns students to elections via Django Admin or Web Admin.
     """
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -184,4 +185,73 @@ class UserElectionMapping(models.Model):
         ordering = ['-assigned_at']
 
     def __str__(self):
-        return f"{self.user.username} → {self.election.name}"
+        return f"{self.user.username} -> {self.election.name}"
+
+
+class VoteFeedback(models.Model):
+    """
+    Post-vote feedback submitted by a student after casting their vote.
+    One feedback entry per student per election.
+    """
+    EXPERIENCE_CHOICES = [
+        ('smooth', 'Very Smooth'),
+        ('neutral', 'Neutral'),
+        ('problematic', 'Had Issues'),
+    ]
+    RATING_CHOICES = [(i, str(i)) for i in range(1, 6)]
+
+    voter = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='vote_feedbacks'
+    )
+    election = models.ForeignKey(
+        Election,
+        on_delete=models.CASCADE,
+        related_name='feedbacks'
+    )
+    rating = models.PositiveSmallIntegerField(choices=RATING_CHOICES)
+    experience = models.CharField(max_length=20, choices=EXPERIENCE_CHOICES)
+    comments = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('voter', 'election')]
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.voter.username} feedback for {self.election.name} — {self.rating}*"
+
+
+class TieBreaker(models.Model):
+    """
+    Admin-decided winner when two or more candidates are tied in a position.
+    """
+    election = models.ForeignKey(
+        Election,
+        on_delete=models.CASCADE,
+        related_name='tiebreakers'
+    )
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.CASCADE,
+        related_name='tiebreakers'
+    )
+    winner = models.ForeignKey(
+        Candidate,
+        on_delete=models.CASCADE,
+        related_name='tiebreaker_wins'
+    )
+    decided_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='tiebreaker_decisions'
+    )
+    decided_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = [('election', 'position')]
+
+    def __str__(self):
+        return f"Tie-break: {self.winner.name} wins {self.position.title} in {self.election.name}"

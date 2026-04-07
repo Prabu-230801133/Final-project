@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Vote Feedback — {{ election.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 100px; padding-bottom: 4rem; max-width: 680px;">
+
+  <!-- Header -->
+  <div class="text-center" style="margin-bottom: 2.5rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">📝</div>
+    <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Share Your Feedback</h1>
+    <p style="color: var(--text-muted);">Your vote has been cast! Help us improve by sharing your experience in <strong style="color: var(--primary-light);">{{ election.name }}</strong>.</p>
+  </div>
+
+  <!-- Feedback Form Card -->
+  <div class="card" style="padding: 2.5rem;">
+    <form method="post" id="feedbackForm">
+      {% csrf_token %}
+
+      <!-- Star Rating -->
+      <div class="form-group">
+        <label class="form-label">Overall Experience Rating</label>
+        <div class="star-rating-wrapper" style="margin-top: 0.5rem;">
+          <div id="starRating" style="display: flex; gap: 0.5rem; flex-direction: row-reverse; justify-content: flex-end;">
+            {% for i in "54321" %}
+            <label for="star{{ i }}" class="star-label" title="{{ i }} star{% if i != '1' %}s{% endif %}" style="font-size: 2.5rem; cursor: pointer; color: var(--text-muted); transition: color 0.15s ease;">&#9733;</label>
+            <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" style="display: none;" required>
+            {% endfor %}
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">Click to rate</p>
+        </div>
+      </div>
+
+      <!-- Experience -->
+      <div class="form-group">
+        <label class="form-label" for="experience">How was the voting process?</label>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.5rem;">
+          <label class="experience-card" for="exp_smooth">
+            <input type="radio" id="exp_smooth" name="experience" value="smooth" required>
+            <span class="exp-icon">✅</span>
+            <span class="exp-text">Very Smooth</span>
+          </label>
+          <label class="experience-card" for="exp_neutral">
+            <input type="radio" id="exp_neutral" name="experience" value="neutral">
+            <span class="exp-icon">😐</span>
+            <span class="exp-text">Neutral</span>
+          </label>
+          <label class="experience-card" for="exp_problematic">
+            <input type="radio" id="exp_problematic" name="experience" value="problematic">
+            <span class="exp-icon">⚠️</span>
+            <span class="exp-text">Had Issues</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Comments -->
+      <div class="form-group">
+        <label class="form-label" for="comments">Additional Comments <span style="color: var(--text-muted); font-weight: 400;">(Optional)</span></label>
+        <textarea id="comments" name="comments" class="form-control" placeholder="Share any thoughts or suggestions about the voting experience..." rows="4"></textarea>
+      </div>
+
+      <!-- Submit -->
+      <div style="display: flex; gap: 1rem; margin-top: 0.5rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1;" id="submitFeedbackBtn">
+          Submit Feedback &amp; Continue →
+        </button>
+        <a href="{% url 'voting:vote_success' election_id=election.id %}" class="btn btn-outline" style="padding: 0.75rem 1.25rem;">
+          Skip
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<style>
+/* Star Rating */
+#starRating input[type="radio"]:checked ~ label,
+#starRating label:hover,
+#starRating label:hover ~ label {
+  color: #FFB347 !important;
+}
+
+/* Experience Cards */
+.experience-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0.75rem;
+  background: var(--bg-card);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+}
+
+.experience-card input[type="radio"] {
+  display: none;
+}
+
+.experience-card:hover {
+  border-color: var(--primary-light);
+  background: rgba(108, 99, 255, 0.1);
+}
+
+.experience-card:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(108, 99, 255, 0.2);
+  box-shadow: 0 0 20px rgba(108, 99, 255, 0.3);
+}
+
+.exp-icon { font-size: 1.75rem; line-height: 1; }
+.exp-text { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); }
+
+[data-theme="light"] .experience-card {
+  background: #f0f0f8;
+  border-color: #d0d0f0;
+}
+
+[data-theme="light"] .experience-card:hover {
+  background: rgba(108, 99, 255, 0.08);
+}
+</style>
+
+<script>
+// Highlight stars on click
+const stars = document.querySelectorAll('#starRating .star-label');
+const radios = document.querySelectorAll('#starRating input[type="radio"]');
+
+radios.forEach((radio, idx) => {
+  radio.addEventListener('change', () => {
+    stars.forEach((star, i) => {
+      star.style.color = i >= idx ? '#FFB347' : 'var(--text-muted)';
+    });
+  });
+});
+
+// Hover effects
+stars.forEach((star, idx) => {
+  star.addEventListener('mouseenter', () => {
+    stars.forEach((s, i) => { s.style.color = i >= idx ? '#FFB347' : 'var(--text-muted)'; });
+  });
+  star.addEventListener('mouseleave', () => {
+    const checked = document.querySelector('#starRating input:checked');
+    if (!checked) {
+      stars.forEach(s => s.style.color = 'var(--text-muted)');
+    } else {
+      const checkedIdx = [...radios].indexOf(checked);
+      stars.forEach((s, i) => { s.style.color = i >= checkedIdx ? '#FFB347' : 'var(--text-muted)'; });
+    }
+  });
+});
+</script>
+{% endblock %}
