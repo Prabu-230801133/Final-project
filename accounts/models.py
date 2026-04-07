@@ -62,6 +62,28 @@ class CustomUser(AbstractUser):
     def is_web_admin(self):
         return self.role == 'web_admin'
 
+class PasswordResetOTP(models.Model):
+    """
+    Temporary OTP for password reset.
+    Valid for a short duration (e.g., 10 minutes).
+    """
+    user = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='password_reset_otps'
+    )
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_verified = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP for {self.user.username} at {self.created_at}"
+
     @property
-    def is_django_admin(self):
-        return self.role == 'django_admin'
+    def is_expired(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        return timezone.now() > self.created_at + timedelta(minutes=10)

@@ -98,9 +98,9 @@ Description: {election.description or 'N/A'}
 Your Login Credentials:
 -----------------------
 Username : {user.username}
-Password : [Your registered password, Default: Student@123]
+Password : [Your registered password]
 
-Please log in on time to cast your vote.
+If you have forgotten your password, please use the "Forgot Password" link on the login page:
 Login: http://localhost:8000/accounts/login/
 
 Best regards,
@@ -213,3 +213,37 @@ College Election Committee
             recipient_list=[user.email],
             fail_silently=True,
         )
+
+
+def send_password_reset_otp_email(user, otp):
+    """
+    Send an OTP to the user for resetting their password.
+    """
+    if not user.email:
+        return False
+        
+    subject = "Password Reset Request - VoteX"
+    message = f"""
+Dear {user.get_full_name() or user.username},
+
+You have requested to reset your password for the College Voting System (VoteX).
+
+Your Password Reset OTP is: {otp}
+
+This code is valid for 10 minutes. If you did not request this, please ignore this email and ensure your account is secure.
+
+Best regards,
+College Election Committee
+    """.strip()
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        return False
