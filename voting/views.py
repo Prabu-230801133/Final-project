@@ -15,7 +15,8 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Count, Avg
 from accounts.decorators import student_required
-from accounts.utils import send_vote_confirmation_email
+from accounts.utils import send_vote_confirmation_email, send_vote_otp_email
+import random
 from .models import Election, Position, Candidate, Vote, UserElectionMapping, VoteFeedback, TieBreaker
 
 
@@ -190,7 +191,7 @@ def cast_vote(request, election_id):
             return redirect('voting:student_dashboard')
 
     errors = []
-    chosen_candidate_ids = []
+    pending_votes = []
 
     for key, value in request.POST.items():
         if key.startswith('position_') and value:
@@ -205,7 +206,10 @@ def cast_vote(request, election_id):
                     errors.append(f'Already voted for {position.title}.')
                     continue
 
-                chosen_candidate_ids.append(candidate_id)
+                pending_votes.append({
+                    'position_id': position.id,
+                    'candidate_id': candidate.id,
+                })
             except (ValueError, TypeError):
                 errors.append(f'Invalid vote data for {key}')
 
@@ -213,87 +217,86 @@ def cast_vote(request, election_id):
         for err in errors:
             messages.warning(request, err)
 
-    if not chosen_candidate_ids:
-        # If no votes were valid, redirect back
-        return redirect('voting:election_detail', election_id=election_id)
+    if pending_votes:
+        otp = str(random.randint(100000, 999999))
+        request.session[f'pending_votes_{election_id}'] = pending_votes
+        request.session[f'vote_otp_{election_id}'] = otp
+        
+        email_sent = send_vote_otp_email(user, election, otp)
+        if email_sent:
+            messages.info(request, f'An OTP has been sent to your email to verify your vote for "{election.name}".')
+            return redirect('voting:verify_otp', election_id=election_id)
+        else:
+            messages.error(request, 'Failed to send OTP email. Please try again.')
+            if f'pending_votes_{election_id}' in request.session:
+                del request.session[f'pending_votes_{election_id}']
+            if f'vote_otp_{election_id}' in request.session:
+                del request.session[f'vote_otp_{election_id}']
+            return redirect('voting:election_detail', election_id=election_id)
 
-    import random
-    from django.core.mail import send_mail
-    from django.conf import settings
-
-    otp = str(random.randint(100000, 999999))
-    request.session['vote_otp'] = otp
-    request.session['pending_candidates'] = chosen_candidate_ids
-    request.session['vote_election_id'] = election_id
-    
-    try:
-        send_mail(
-            subject='VoteX - Your Voting OTP',
-            message=f'Hello {user.get_full_name() or user.username},\n\nYour OTP to verify and submit your vote is: {otp}\n\nDo not share this code with anyone.',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
-    except Exception as e:
-        messages.error(request, 'Failed to send OTP to your email. Please check your account email address.')
-        return redirect('voting:election_detail', election_id=election_id)
-
-    messages.info(request, f'An OTP has been sent to {user.email}. Please verify to confirm your vote.')
-    return redirect('voting:verify_vote_otp', election_id=election_id)
+    return redirect('voting:election_detail', election_id=election_id)
 
 
 @login_required
-def verify_vote_otp(request, election_id):
+def verify_otp(request, election_id):
     """
-    Verify OTP sent to user before finalizing vote submission.
+    Verify OTP sent to user's email before finalizing vote submission.
     """
     election = get_object_or_404(Election, id=election_id)
     user = request.user
     
-    expected_otp = request.session.get('vote_otp')
-    pending_candidates = request.session.get('pending_candidates')
-    session_election_id = request.session.get('vote_election_id')
+    pending_votes = request.session.get(f'pending_votes_{election_id}')
+    session_otp = request.session.get(f'vote_otp_{election_id}')
     
-    if not pending_candidates or session_election_id != election_id:
-        messages.error(request, 'No pending vote found or session expired. Please re-cast your vote.')
+    if not pending_votes or not session_otp:
+        messages.error(request, 'No active voting session found. Please cast your vote again.')
         return redirect('voting:election_detail', election_id=election_id)
-        
+
     if request.method == 'POST':
         entered_otp = request.POST.get('otp', '').strip()
-        if entered_otp == expected_otp:
-            # Success: save the votes
+        
+        if entered_otp == session_otp:
+            # Finalize Vote
             votes_to_create = []
-            for cid in pending_candidates:
+            for pv in pending_votes:
                 try:
-                    candidate = Candidate.objects.get(id=cid)
-                    votes_to_create.append(Vote(
-                        voter=user,
-                        candidate=candidate,
-                        election=election,
-                        position=candidate.position
-                    ))
-                except Candidate.DoesNotExist:
-                    continue
+                    position = get_object_or_404(Position, id=pv['position_id'], election=election)
+                    candidate = get_object_or_404(Candidate, id=pv['candidate_id'], position=position)
+                    
+                    if not Vote.objects.filter(voter=user, election=election, position=position).exists():
+                        votes_to_create.append(Vote(
+                            voter=user,
+                            candidate=candidate,
+                            election=election,
+                            position=position,
+                        ))
+                except Exception:
+                    pass
             
             if votes_to_create:
                 Vote.objects.bulk_create(votes_to_create)
+                
                 try:
                     send_vote_confirmation_email(user, election)
                 except Exception:
                     pass
-                messages.success(request, f'Your vote has been successfully cast in "{election.name}"!')
+                
+                messages.success(
+                    request,
+                    f'Verification successful! Your vote has been recorded for "{election.name}".'
+                )
             
-            # Clear session
-            del request.session['vote_otp']
-            del request.session['pending_candidates']
-            del request.session['vote_election_id']
+            # Clean up session
+            del request.session[f'pending_votes_{election_id}']
+            del request.session[f'vote_otp_{election_id}']
             
             return redirect('voting:vote_feedback', election_id=election_id)
         else:
             messages.error(request, 'Invalid OTP. Please try again.')
 
-    return render(request, 'voting/verify_otp.html', {'election': election})
-
+    return render(request, 'voting/verify_otp.html', {
+        'election': election,
+    })
 
 
 @login_required

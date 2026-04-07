@@ -144,3 +144,37 @@ College Election Committee
             recipient_list=[user.email],
             fail_silently=True,
         )
+
+
+def send_vote_otp_email(user, election, otp):
+    """
+    Send an OTP to the user for verifying their vote.
+    """
+    if not user.email:
+        return False
+        
+    subject = f"Vote Verification OTP - {election.name}"
+    message = f"""
+Dear {user.get_full_name() or user.username},
+
+You are attempting to cast your vote in "{election.name}".
+
+Your OTP code is: {otp}
+
+Please enter this code to verify and submit your vote. Do not share this code with anyone.
+
+Best regards,
+College Election Committee
+    """.strip()
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+        return True
+    except Exception:
+        return False

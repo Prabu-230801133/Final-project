@@ -273,6 +273,11 @@ a:hover { color: var(--accent); }
 
 .form-control::placeholder { color: var(--text-muted); }
 
+select.form-control option {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
 textarea.form-control { resize: vertical; min-height: 100px; }
 
 select.form-control option {
@@ -814,7 +819,7 @@ tr:hover td {
 /* ─── Scrollbar ─── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb { background: rgba(108, 99, 255, 0.4); border-radius: var(--radius-full); }
 ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
 
 /* ─── Loading Spinner ─── */
@@ -899,6 +904,11 @@ tr:hover td {
   border-right-color: rgba(108, 99, 255, 0.15);
 }
 
+[data-theme="light"] .sidebar-nav-item.active,
+[data-theme="light"] .sidebar-nav-item:hover {
+  color: var(--primary-dark);
+}
+
 [data-theme="light"] table th {
   background: rgba(108, 99, 255, 0.06);
   color: rgba(26, 26, 46, 0.6);
@@ -939,4 +949,4 @@ tr:hover td {
 [data-theme="light"] .alert-info { background: rgba(108, 99, 255, 0.12); color: #4c44cc; }
 
 [data-theme="light"] ::-webkit-scrollbar-track { background: var(--bg-base); }
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(108, 99, 255, 0.3); }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(108, 99, 255, 0.5); }
