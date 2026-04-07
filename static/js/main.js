@@ -37,11 +37,73 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// ─── Page load animation ───
-document.body.style.opacity = '0';
-document.body.style.transition = 'opacity 0.3s ease';
-window.addEventListener('load', () => {
-  document.body.style.opacity = '1';
+// ─── Circular Ripple Page Transition ───
+document.addEventListener('DOMContentLoaded', () => {
+  const overlay = document.getElementById('pageTransition');
+
+  if (overlay) {
+    // On page arrival: overlay is already covering (circle-shown), now collapse it away
+    overlay.classList.add('circle-shown');
+    // Force reflow so the snap is applied before we start the collapse animation
+    void overlay.offsetWidth;
+    overlay.classList.remove('circle-shown');
+    overlay.classList.add('circle-collapse');
+  }
+
+  // Intercept all internal navigation link clicks
+  document.querySelectorAll('a[href]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = link.getAttribute('href');
+
+      // Skip non-navigating links
+      if (
+        !target ||
+        target.startsWith('#') ||
+        target.startsWith('javascript:') ||
+        link.target === '_blank' ||
+        link.hasAttribute('download') ||
+        e.ctrlKey || e.metaKey ||
+        target.match(/^(mailto|tel):/)
+      ) return;
+
+      try {
+        const url = new URL(target, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+      } catch (err) { return; }
+
+      if (link.classList.contains('no-transition')) return;
+
+      e.preventDefault();
+
+      if (overlay) {
+        // Reset to tiny dot (no animation)
+        overlay.classList.remove('circle-collapse', 'circle-shown');
+        void overlay.offsetWidth; // force reflow
+        // Expand circle to cover screen
+        overlay.classList.add('circle-expand');
+        // After expand animation, navigate
+        setTimeout(() => {
+          window.location.assign(link.href);
+        }, 520);
+      } else {
+        window.location.assign(link.href);
+      }
+    });
+  });
+});
+
+// BFCache: browser Back/Forward restores page from cache — collapse overlay
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    const overlay = document.getElementById('pageTransition');
+    if (overlay) {
+      overlay.classList.remove('circle-expand', 'circle-collapse');
+      overlay.classList.add('circle-shown');
+      void overlay.offsetWidth;
+      overlay.classList.remove('circle-shown');
+      overlay.classList.add('circle-collapse');
+    }
+  }
 });
 
 // ─── Animate stat values on scroll ───

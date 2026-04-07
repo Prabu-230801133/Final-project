@@ -128,16 +128,26 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+{# Inject Django template data as JSON so VS Code JS parser sees valid syntax #}
+<script id="chart-data" type="application/json">
+  {
+    "labels": {{ chart_labels|safe }},
+    "data": {{ chart_data|safe }}
+  }
+</script>
+
 <script>
 // Chart.js — Votes per Election Bar Chart
+const chartPayload = JSON.parse(document.getElementById('chart-data').textContent);
 const ctx = document.getElementById('votesChart').getContext('2d');
 new Chart(ctx, {
   type: 'bar',
   data: {
-    labels: {{ chart_labels|safe }},
+    labels: chartPayload.labels,
     datasets: [{
       label: 'Votes Cast',
-      data: {{ chart_data|safe }},
+      data: chartPayload.data,
       backgroundColor: 'rgba(108, 99, 255, 0.6)',
       borderColor: 'rgba(108, 99, 255, 1)',
       borderWidth: 2,

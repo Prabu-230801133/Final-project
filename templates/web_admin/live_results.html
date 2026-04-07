@@ -95,7 +95,12 @@
     <!-- Donut Chart per position -->
     <div>
       <div class="donut-wrap">
-        <canvas id="donut-{{ item.position.id }}" width="200" height="200"></canvas>
+        <canvas id="donut-{{ item.position.id }}" width="200" height="200"
+          data-chart-json='{
+            "labels": [{% for cd in item.candidates %}"{{ cd.name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            "data": [{% for cd in item.candidates %}{{ cd.votes }}{% if not forloop.last %},{% endif %}{% endfor %}]
+          }'>
+        </canvas>
         <div class="donut-label">
           <div style="font-size:1.5rem;font-weight:800;color:var(--text-primary);">{{ item.total }}</div>
           <div style="font-size:0.72rem;color:var(--text-muted);">votes</div>
@@ -107,13 +112,15 @@
 
 <script>
 (function() {
-  const ctx = document.getElementById('donut-{{ item.position.id }}').getContext('2d');
+  const canvasEl = document.getElementById('donut-{{ item.position.id }}');
+  const payload = JSON.parse(canvasEl.dataset.chartJson);
+  const ctx = canvasEl.getContext('2d');
   new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: [{% for cd in item.candidates %}'{{ cd.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+      labels: payload.labels,
       datasets: [{
-        data: [{% for cd in item.candidates %}{{ cd.votes }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        data: payload.data,
         backgroundColor: ['#6C63FF','#FF6B9D','#00D9A3','#FFB347','#4ECDC4','#FF5E7A'],
         borderWidth: 2,
         borderColor: 'transparent',

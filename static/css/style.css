@@ -856,6 +856,45 @@ tr:hover td {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
 }
 
+/* ─── Circular Ripple Page Transition ─── */
+.page-transition {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  /* Gradient that looks like a glowing orb expanding */
+  background: radial-gradient(circle at bottom right, var(--primary) 0%, #1a1a2e 60%);
+  z-index: 999999;
+  pointer-events: none;
+  /* Start as a tiny circle at bottom-right corner */
+  clip-path: circle(0% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0s; /* No transition initially */
+}
+
+[data-theme="light"] .page-transition {
+  background: radial-gradient(circle at bottom right, var(--primary) 0%, var(--bg-surface) 70%);
+}
+
+/* Phase: Cover — circle expands to fill screen */
+.page-transition.circle-expand {
+  clip-path: circle(150% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: all;
+}
+
+/* Phase: Revealed — instantly reset to hidden after new page loads */
+.page-transition.circle-shown {
+  clip-path: circle(150% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: none; /* snap with no animation */
+}
+
+/* Phase: Uncover — circle collapses away to reveal new page */
+.page-transition.circle-collapse {
+  clip-path: circle(0% at calc(100% - 2rem) calc(100% - 2rem));
+  transition: clip-path 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+  pointer-events: none;
+}
+
 /* Override transition for interactive elements to avoid sluggishness */
 .btn, .card, .sidebar-nav-item, .vote-candidate-card, a {
   transition: all var(--transition);
