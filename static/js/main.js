@@ -37,11 +37,70 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// ─── Page load animation ───
-document.body.style.opacity = '0';
-document.body.style.transition = 'opacity 0.3s ease';
-window.addEventListener('load', () => {
-  document.body.style.opacity = '1';
+// ─── Box Page Transition Logic ───
+document.addEventListener('DOMContentLoaded', () => {
+  const overlay = document.getElementById('pageTransition');
+  
+  if (overlay) {
+    // 1. Uncover the new page smoothly
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        overlay.classList.add('slide-down');
+      });
+    });
+  }
+
+  // 2. Intercept internal link clicks to cover the page before routing
+  document.querySelectorAll('a[href]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = link.getAttribute('href');
+      
+      // Skip `#` links, external links, tabs, JS interactions, emails, etc.
+      if (!target || target.startsWith('#') || target.startsWith('javascript:') || link.target === '_blank' || link.hasAttribute('download') || e.ctrlKey || e.metaKey || target.match(/^(mailto|tel):/)) return;
+      
+      try {
+        const url = new URL(target, window.location.origin);
+        if (url.origin !== window.location.origin) return; // external link
+      } catch (err) {
+        return; // malformed url
+      }
+
+      if (link.getAttribute('role') === 'button' || link.classList.contains('no-transition')) return;
+
+      e.preventDefault();
+      
+      if (overlay) {
+        // Prepare overlay at top
+        overlay.classList.remove('slide-down');
+        overlay.classList.add('reset');
+        
+        // Force reflow
+        void overlay.offsetWidth;
+        
+        // Slide down to cover screen
+        overlay.classList.remove('reset');
+        overlay.classList.add('slide-in');
+        
+        // Wait for animation to finish before actually redirecting
+        setTimeout(() => {
+          window.location.assign(link.href);
+        }, 450); 
+      } else {
+        window.location.assign(link.href);
+      }
+    });
+  });
+});
+
+// 3. Fix BFCache (when user presses back button in browser, page shouldn't be covered)
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    const overlay = document.getElementById('pageTransition');
+    if (overlay) {
+      overlay.classList.remove('slide-in', 'reset');
+      overlay.classList.add('slide-down');
+    }
+  }
 });
 
 // ─── Animate stat values on scroll ───

@@ -5,11 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block admin_title %}Admin{% endblock %} — VoteX Admin</title>
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>⚙️</text></svg>">
   {% block extra_css %}{% endblock %}
 </head>
 <body>
+  <!-- Page Transition Overlay -->
+  <div id="pageTransition" class="page-transition"></div>
 
 <!-- Flash Messages -->
 {% if messages %}
@@ -86,7 +88,7 @@
   </div>
 </div>
 
-<script src="{% static 'js/main.js' %}?v=2"></script>
+<script src="{% static 'js/main.js' %}?v=6"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

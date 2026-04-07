@@ -6,12 +6,15 @@
   <meta name="description" content="{% block meta_description %}College Voting System — Secure, Transparent Elections{% endblock %}">
   <title>{% block title %}College Voting System{% endblock %}</title>
   {% load static %}
-  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=4">
-  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6">
+  <link rel="stylesheet" href="{% static 'css/chatbot.css' %}?v=6">
   {% block extra_css %}{% endblock %}
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🗳️</text></svg>">
 </head>
 <body class="{% block body_class %}{% endblock %}">
+
+  <!-- Page Transition Overlay -->
+  <div id="pageTransition" class="page-transition"></div>
 
   <!-- Floating Orbs for Visual Depth -->
   <div style="position:fixed;bottom:-150px;left:-100px;width:400px;height:400px;background:radial-gradient(circle,rgba(255,107,157,0.1) 0%,transparent 70%);pointer-events:none;z-index:-1;"></div>
@@ -88,8 +91,8 @@
   </footer>
   {% endblock footer %}
 
-  <script src="{% static 'js/main.js' %}?v=2"></script>
-  <script src="{% static 'js/chatbot.js' %}?v=2"></script>
+  <script src="{% static 'js/main.js' %}?v=6"></script>
+  <script src="{% static 'js/chatbot.js' %}?v=6"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

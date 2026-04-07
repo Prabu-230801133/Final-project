@@ -851,6 +851,39 @@ tr:hover td {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
 }
 
+/* ─── Box Movement Page Transition ─── */
+.page-transition {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: var(--bg-surface);
+  z-index: 999999;
+  pointer-events: none;
+  /* Phase 1: On fresh load, block covers screen initially */
+  transform: translateY(0);
+  transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+.page-transition.slide-down {
+  /* Phase 2: Slides down to reveal the loaded page */
+  transform: translateY(100%);
+}
+
+.page-transition.reset {
+  /* Phase 3: Snap instantly to top, ready to slide down again over screen */
+  transition: none;
+  transform: translateY(-100%);
+}
+
+.page-transition.slide-in {
+  /* Phase 4: Slide down to cover the screen just prior to redirect */
+  transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+  transform: translateY(0);
+  pointer-events: all;
+}
+
 /* Override transition for interactive elements to avoid sluggishness */
 .btn, .card, .sidebar-nav-item, .vote-candidate-card, a {
   transition: all var(--transition);
