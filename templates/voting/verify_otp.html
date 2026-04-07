@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Verify Vote - {{ election.name }}{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 500px; padding-top: 120px; padding-bottom: 60px;">
+  <div class="card" style="text-align: center; padding: 3rem 2rem;">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+    <h2 style="margin-bottom: 0.5rem;">Verify Your Vote</h2>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 2rem;">
+      We've sent a 6-digit One-Time Password (OTP) to your registered email address (<strong>{{ request.user.email }}</strong>). 
+      Please enter it below to confirm your vote for <strong>{{ election.name }}</strong>.
+    </p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group" style="text-align: left;">
+        <label class="form-label" style="text-align: center; display: block;">Enter 6-digit OTP</label>
+        <input type="text" name="otp" class="form-control" placeholder="123456" required style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center; font-weight: bold;" maxlength="6" pattern="\d{6}">
+      </div>
+      <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+        Confirm & Submit Vote
+      </button>
+    </form>
+    
+    <div style="margin-top: 2rem; border-top: 1px solid var(--glass-border); padding-top: 1.5rem; font-size: 0.85rem;">
+      <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Didn't receive the email or entered the wrong vote?</p>
+      <a href="{% url 'voting:election_detail' election.id %}" style="color: var(--primary); text-decoration: none; font-weight: 600;">
+        ← Cancel and re-cast vote
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
