@@ -376,6 +376,36 @@ def candidate_add(request, position_id):
 
 
 @web_admin_required
+def candidate_edit(request, candidate_id):
+    """Edit a candidate's details."""
+    candidate = get_object_or_404(Candidate, id=candidate_id)
+    election_id = candidate.position.election_id
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        bio = request.POST.get('bio', '').strip()
+        manifesto = request.POST.get('manifesto', '').strip()
+        photo = request.FILES.get('photo')
+
+        if not name:
+            messages.error(request, 'Candidate name is required.')
+        else:
+            candidate.name = name
+            candidate.bio = bio
+            candidate.manifesto = manifesto
+            if photo:
+                candidate.photo = photo
+            candidate.save()
+            messages.success(request, f'Candidate "{name}" updated successfully.')
+            return redirect('web_admin:election_detail', election_id=election_id)
+
+    return render(request, 'web_admin/candidate_edit.html', {
+        'candidate': candidate,
+        'election_id': election_id
+    })
+
+
+@web_admin_required
 def candidate_delete(request, candidate_id):
     """Remove a candidate."""
     candidate = get_object_or_404(Candidate, id=candidate_id)

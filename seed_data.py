@@ -84,90 +84,76 @@ def create_seed_data():
             students.append(CustomUser.objects.get(username=s['username']))
             print(f"  ⏭️  Student {s['username']} already exists")
 
-    # ── 4. Create Elections ──
+    # ── 4. Delete Old Elections & Create New Ones ──
     now = timezone.now()
+    
+    print("  🗑️ Deleting existing elections...")
+    Election.objects.all().delete()
 
-    # Active election
-    election1, e1_created = Election.objects.get_or_create(
-        name="Student Council Election 2025",
-        defaults={
-            'description': 'Annual election for Student Council. All students are encouraged to vote!',
+    elections_data = [
+        {
+            'name': "Student Council Election",
+            'description': 'Annual election for Student Council.',
             'start_time': now - timedelta(hours=2),
             'end_time': now + timedelta(days=2),
-            'created_by': admin,
-        }
-    )
-    print(f"  {'✅ Created' if e1_created else '⏭️  Exists'}: {election1.name}")
-
-    # Upcoming election
-    election2, e2_created = Election.objects.get_or_create(
-        name="Sports Committee Election 2025",
-        defaults={
-            'description': 'Elect your Sports Committee representatives for the upcoming year.',
+            'positions': [("President", "Head of the Student Council", 1), ("Secretary", "Secretary of the Student Council", 2)]
+        },
+        {
+            'name': "Sports Committee Election",
+            'description': 'Elect your Sports Committee representatives.',
             'start_time': now + timedelta(days=5),
             'end_time': now + timedelta(days=8),
-            'created_by': admin,
+            'positions': [("Sports Captain", "Head of the Sports Committee", 1)]
+        },
+        {
+            'name': "Hostel Committee Election",
+            'description': 'Election for hostel representatives.',
+            'start_time': now + timedelta(days=1),
+            'end_time': now + timedelta(days=3),
+            'positions': [("Hostel Secretary", "Representative of hostel affairs", 1)]
+        },
+        {
+            'name': "Recharge Core Team Election",
+            'description': 'Election to select the core team for Recharge.',
+            'start_time': now + timedelta(days=10),
+            'end_time': now + timedelta(days=15),
+            'positions': [("Core Member", "Member of the Recharge Core Team", 1)]
+        },
+        {
+            'name': "Class Election for Monitor and Vice Monitor",
+            'description': 'Select your class monitor and vice monitor.',
+            'start_time': now - timedelta(days=1),
+            'end_time': now + timedelta(days=1),
+            'positions': [("Monitor", "Class Monitor", 1), ("Vice Monitor", "Class Vice Monitor", 2)]
         }
-    )
-    print(f"  {'✅ Created' if e2_created else '⏭️  Exists'}: {election2.name}")
-
-    # ── 5. Add Positions to Election 1 ──
-    president_pos, _ = Position.objects.get_or_create(
-        election=election1, title="President",
-        defaults={'description': 'Head of the Student Council', 'order': 1}
-    )
-    secretary_pos, _ = Position.objects.get_or_create(
-        election=election1, title="Secretary",
-        defaults={'description': 'Secretary of the Student Council', 'order': 2}
-    )
-    treasurer_pos, _ = Position.objects.get_or_create(
-        election=election1, title="Treasurer",
-        defaults={'description': 'Manages student council funds', 'order': 3}
-    )
-
-    # ── 6. Add Candidates ──
-    candidates_data = [
-        # President candidates
-        {'position': president_pos, 'name': 'Aditya Nair', 'bio': 'Passionate about student welfare and campus development.'},
-        {'position': president_pos, 'name': 'Divya Menon', 'bio': '3 years of leadership experience in college clubs.'},
-        # Secretary candidates
-        {'position': secretary_pos, 'name': 'Rohan Singh', 'bio': 'Detail-oriented with strong organizational skills.'},
-        {'position': secretary_pos, 'name': 'Anjali Bose', 'bio': 'Committed to transparent governance and student rights.'},
-        # Treasurer candidates
-        {'position': treasurer_pos, 'name': 'Vikram Rao', 'bio': 'Finance student with budgeting experience.'},
-        {'position': treasurer_pos, 'name': 'Meena Das', 'bio': 'Accountable and transparent with financial matters.'},
     ]
 
-    for cd in candidates_data:
-        Candidate.objects.get_or_create(
-            position=cd['position'],
-            name=cd['name'],
-            defaults={'bio': cd['bio']}
+    for edata in elections_data:
+        election = Election.objects.create(
+            name=edata['name'],
+            description=edata['description'],
+            start_time=edata['start_time'],
+            end_time=edata['end_time'],
+            created_by=admin,
+            is_published=True
         )
-    print(f"  ✅ Candidates added for {election1.name}")
+        print(f"  ✅ Created Election: {election.name}")
 
-    # ── 7. Assign students to election ──
-    for student in students:
-        UserElectionMapping.objects.get_or_create(
-            user=student,
-            election=election1,
-            defaults={'assigned_by': admin}
-        )
-    print(f"  ✅ Assigned {len(students)} students to {election1.name}")
+        for p_title, p_desc, p_order in edata['positions']:
+            pos = Position.objects.create(
+                election=election, title=p_title, description=p_desc, order=p_order
+            )
+            # Create a couple of dummy candidates for each position
+            Candidate.objects.create(position=pos, name=f"Candidate A for {p_title}")
+            Candidate.objects.create(position=pos, name=f"Candidate B for {p_title}")
 
-    # ── 8. Add positions to election 2 ──
-    sports_pos, _ = Position.objects.get_or_create(
-        election=election2, title="Sports Captain",
-        defaults={'order': 1}
-    )
-    Candidate.objects.get_or_create(
-        position=sports_pos, name="Mohan Iyer",
-        defaults={'bio': 'National-level athlete with team leadership skills.'}
-    )
-    Candidate.objects.get_or_create(
-        position=sports_pos, name="Fatima Hussain",
-        defaults={'bio': 'College sports champion 2024.'}
-    )
+        # Assign all students to all these elections
+        for student in students:
+            UserElectionMapping.objects.get_or_create(
+                user=student,
+                election=election,
+                defaults={'assigned_by': admin}
+            )
 
     print("\n🎉 Seed data complete!")
     print("\n📋 Login Credentials:")

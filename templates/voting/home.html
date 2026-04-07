@@ -200,6 +200,15 @@
   color: var(--text-primary);
   white-space: nowrap;
 }
+.ticker-election-name {
+  color: var(--primary-light);
+  /* Optional: giving it a slight gradient or text-shadow makes it pop */
+  text-shadow: 0 0 10px rgba(139, 133, 255, 0.4);
+}
+[data-theme="light"] .ticker-election-name {
+  color: var(--primary-dark);
+  text-shadow: none;
+}
 </style>
 {% endblock %}
 
@@ -217,7 +226,7 @@
           {% for el in active_elections %}
             <div class="ticker-item">
               <span style="color:#00D9A3;font-weight:800;animation:blink-dot 2s infinite;">● LIVE</span> 
-              <strong>{{ el.name }}</strong> — Closes at: {{ el.end_time|date:"d M Y, h:i A" }}
+              <strong class="ticker-election-name">{{ el.name }}</strong> — Closes at: {{ el.end_time|date:"d M Y, h:i A" }}
             </div>
           {% endfor %}
         {% else %}
