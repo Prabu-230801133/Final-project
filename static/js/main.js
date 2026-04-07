@@ -27,12 +27,29 @@ if (navbar) {
 }
 
 // ─── Smooth scroll for anchor links ───
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+document.querySelectorAll('a').forEach(anchor => {
   anchor.addEventListener('click', function(e) {
-    const target = document.querySelector(this.getAttribute('href'));
-    if (target) {
-      e.preventDefault();
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const targetHref = this.getAttribute('href');
+    if (!targetHref) return;
+
+    if (targetHref.startsWith('#')) {
+      const target = document.querySelector(targetHref);
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      try {
+        const url = new URL(this.href);
+        if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash) {
+          const target = document.querySelector(url.hash);
+          if (target) {
+            e.preventDefault();
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            history.pushState(null, '', url.hash);
+          }
+        }
+      } catch (err) {}
     }
   });
 });
@@ -42,48 +59,82 @@ document.addEventListener('DOMContentLoaded', () => {
   const overlay = document.getElementById('pageTransition');
 
   if (overlay) {
-    // On page arrival: overlay is already covering (circle-shown), now collapse it away
+    // On page arrival: overlay covers screen, now collapse it away
     overlay.classList.add('circle-shown');
-    // Force reflow so the snap is applied before we start the collapse animation
-    void overlay.offsetWidth;
+    void overlay.offsetWidth; // force reflow
     overlay.classList.remove('circle-shown');
     overlay.classList.add('circle-collapse');
+
+    // After collapse animation, check if we need to scroll to a stored hash anchor
+    const pendingHash = sessionStorage.getItem('scrollToHash');
+    if (pendingHash) {
+      sessionStorage.removeItem('scrollToHash');
+      // Wait for collapse to finish (~600ms), then smooth-scroll to section
+      setTimeout(() => {
+        const target = document.querySelector(pendingHash);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.replaceState(null, '', pendingHash);
+        }
+      }, 650);
+    }
   }
 
   // Intercept all internal navigation link clicks
   document.querySelectorAll('a[href]').forEach(link => {
     link.addEventListener('click', (e) => {
-      const target = link.getAttribute('href');
+      const rawTarget = link.getAttribute('href');
 
       // Skip non-navigating links
       if (
-        !target ||
-        target.startsWith('#') ||
-        target.startsWith('javascript:') ||
+        !rawTarget ||
+        rawTarget.startsWith('#') ||
+        rawTarget.startsWith('javascript:') ||
         link.target === '_blank' ||
         link.hasAttribute('download') ||
         e.ctrlKey || e.metaKey ||
-        target.match(/^(mailto|tel):/)
+        rawTarget.match(/^(mailto|tel):/)
       ) return;
 
+      let url;
       try {
-        const url = new URL(target, window.location.origin);
+        url = new URL(link.href);
         if (url.origin !== window.location.origin) return;
       } catch (err) { return; }
+
+      // If on the same page and only the hash differs, just smooth-scroll — no transition
+      if (url.pathname === window.location.pathname && url.search === window.location.search && url.hash) {
+        e.preventDefault();
+        const target = document.querySelector(url.hash);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.pushState(null, '', url.hash);
+        }
+        return;
+      }
 
       if (link.classList.contains('no-transition')) return;
 
       e.preventDefault();
 
       if (overlay) {
-        // Reset to tiny dot (no animation)
         overlay.classList.remove('circle-collapse', 'circle-shown');
         void overlay.offsetWidth; // force reflow
-        // Expand circle to cover screen
         overlay.classList.add('circle-expand');
-        // After expand animation, navigate
+
+        // If the destination has a hash, store it and navigate without the hash
+        // so the browser doesn't jump the page before the overlay collapses
+        const destHash = url.hash;
+        const destUrl = destHash
+          ? url.pathname + url.search  // strip the hash
+          : link.href;
+
+        if (destHash) {
+          sessionStorage.setItem('scrollToHash', destHash);
+        }
+
         setTimeout(() => {
-          window.location.assign(link.href);
+          window.location.assign(destUrl);
         }, 520);
       } else {
         window.location.assign(link.href);

@@ -30,6 +30,9 @@
   padding: 1.75rem;
   margin-bottom: 1.75rem;
 }
+.leader-bar {
+  background: var(--grad-primary) !important;
+}
 </style>
 {% endblock %}
 
@@ -84,7 +87,7 @@
               </span>
             </div>
             <div class="progress">
-              <div class="progress-bar" style="width:{{ cd.percentage }}%;{% if forloop.first %}background:var(--grad-primary);{% endif %}"></div>
+              <div class="progress-bar {% if forloop.first %}leader-bar{% endif %}" style="width:{{ cd.percentage }}%;"></div>
             </div>
           </div>
         </div>
