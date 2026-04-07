@@ -8,7 +8,18 @@
 
   <!-- Header -->
   <div class="text-center" style="margin-bottom: 2.5rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+    <div style="width:72px;height:72px;margin:0 auto 1rem;background:rgba(108,99,255,0.12);border:2px solid rgba(108,99,255,0.25);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+           stroke="url(#shieldGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <defs>
+          <linearGradient id="shieldGrad" x1="0" y1="0" x2="24" y2="24">
+            <stop offset="0%" stop-color="#4F46E5"/><stop offset="100%" stop-color="#EC4899"/>
+          </linearGradient>
+        </defs>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
     <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem;">Verify Your Vote</h1>
     <p style="color: var(--text-muted);">Please enter the 6-digit OTP sent to your email to confirm your vote in <strong style="color: var(--primary-light);">{{ election.name }}</strong>.</p>
   </div>
@@ -21,7 +32,9 @@
       <!-- OTP -->
       <div class="form-group text-center">
         <label class="form-label" for="otp">One-Time Password</label>
-        <input type="text" id="otp" name="otp" class="form-control text-center" style="font-size: 1.5rem; letter-spacing: 0.25em; font-family: 'Outfit', sans-serif; font-weight: 700;" placeholder="------" maxlength="6" pattern="\d{6}" required autocomplete="off">
+        <input type="text" id="otp" name="otp" class="form-control text-center"
+               style="font-size: 1.5rem; letter-spacing: 0.25em; font-family: 'Outfit', sans-serif; font-weight: 700;"
+               placeholder="------" maxlength="6" pattern="\d{6}" required autocomplete="off">
       </div>
 
       <!-- Submit -->
@@ -30,13 +43,47 @@
           Confirm Vote ✅
         </button>
       </div>
-      
+
       <div class="text-center mt-lg">
           <a href="{% url 'voting:election_detail' election.id %}" style="font-size: 0.85rem; color: var(--text-muted); text-decoration: underline;">
-            Cancel & Return to Election
+            Cancel &amp; Return to Election
           </a>
       </div>
     </form>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('otpForm').addEventListener('submit', function(e) {
+  const otp = document.getElementById('otp').value.trim();
+  if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+    e.preventDefault();
+    alert('Please enter a valid 6-digit OTP.');
+    return;
+  }
+
+  const btn = document.getElementById('verifyBtn');
+  btn.disabled = true;
+  btn.innerHTML = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+         style="animation:spin 0.9s linear infinite;vertical-align:middle;margin-right:6px;">
+      <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+    </svg>Verifying…`;
+
+  // Show the branded process loader
+  VoteXLoader.show('Verifying OTP…', 'Checking your one-time password');
+  setTimeout(() => VoteXLoader.setText('Confirming Identity…', 'Validating your voter token'), 1000);
+  setTimeout(() => VoteXLoader.setText('Finalising Vote…', 'Locking in your ballot'), 2200);
+});
+
+// Auto-focus and auto-advance OTP input
+document.getElementById('otp').addEventListener('input', function() {
+  if (this.value.length === 6) {
+    document.getElementById('verifyBtn').focus();
+  }
+});
+</script>
 {% endblock %}

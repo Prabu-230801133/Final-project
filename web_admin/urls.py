@@ -26,6 +26,7 @@ urlpatterns = [
 
     # Candidate management
     path('positions/<int:position_id>/candidates/add/', views.candidate_add, name='candidate_add'),
+    path('candidates/<int:candidate_id>/edit/', views.candidate_edit, name='candidate_edit'),
     path('candidates/<int:candidate_id>/delete/', views.candidate_delete, name='candidate_delete'),
 
     # Voter assignment
