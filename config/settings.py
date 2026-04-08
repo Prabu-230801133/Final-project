@@ -33,10 +33,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    # Third-party
-    'social_django',
-    'cloudinary',
+    # Third-party (cloudinary_storage must be before django apps that use file storage)
     'cloudinary_storage',
+    'cloudinary',
+    'social_django',
     'rest_framework',
     # Local apps
     'accounts.apps.AccountsConfig',
@@ -122,15 +122,36 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 # Cloudinary configuration (API 3)
 import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# Configure Cloudinary
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME', default=''),
+    api_key=config('CLOUDINARY_API_KEY', default=''),
+    api_secret=config('CLOUDINARY_API_SECRET', default=''),
+)
+
+# Cloudinary storage settings for django-cloudinary-storage
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME', default=''),
     'API_KEY': config('CLOUDINARY_API_KEY', default=''),
     'API_SECRET': config('CLOUDINARY_API_SECRET', default=''),
 }
+
 # Use local storage if Cloudinary not configured
 _use_cloudinary = bool(config('CLOUDINARY_CLOUD_NAME', default=''))
 if _use_cloudinary:
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    # Django 4.2+ also needs STORAGES setting
+    STORAGES = {
+        "default": {
+            "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        },
+    }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
